@@ -1,0 +1,90 @@
+REMARK LIGPARGEN GENERATED PDB FILE
+ATOM      1  C00 PEO     1       1.000   1.000   0.000
+ATOM      2  O01 PEO     1      -0.422   1.000   0.000
+ATOM      3  C02 PEO     1      -0.940   1.000   1.329
+ATOM      4  C03 PEO     1      -2.462   0.998   1.282
+ATOM      5  O04 PEO     1      -2.970   1.000   2.616
+ATOM      6  C05 PEO     1      -4.397   1.000   2.628
+ATOM      7  C06 PEO     1      -4.885   1.004   4.072
+ATOM      8  O07 PEO     1      -6.308   1.066   4.084
+ATOM      9  C08 PEO     1      -6.830   0.967   5.413
+ATOM     10  C09 PEO     1      -8.355   0.947   5.352
+ATOM     11  O0A PEO     1      -8.784  -0.280   4.752
+ATOM     12  C0B PEO     1     -10.199  -0.320   4.591
+ATOM     13  C0C PEO     1     -10.580  -1.586   3.834
+ATOM     14  O0D PEO     1     -12.002  -1.657   3.727
+ATOM     15  C0E PEO     1     -12.413  -2.829   3.025
+ATOM     16  C0F PEO     1     -13.935  -2.852   2.943
+ATOM     17  O0G PEO     1     -14.357  -4.021   2.245
+ATOM     18  C0H PEO     1     -15.775  -4.079   2.145
+ATOM     19  H0I PEO     1       1.345   0.999  -1.037
+ATOM     20  H0J PEO     1       1.382   0.103   0.497
+ATOM     21  H0K PEO     1       1.382   1.898   0.494
+ATOM     22  H0M PEO     1      -0.587   1.887   1.869
+ATOM     23  H0N PEO     1      -0.585   0.114   1.870
+ATOM     24  H0O PEO     1      -2.817   0.110   0.744
+ATOM     25  H0P PEO     1      -2.818   1.884   0.741
+ATOM     26  H0Q PEO     1      -4.778   0.111   2.111
+ATOM     27  H0R PEO     1      -4.778   1.884   2.104
+ATOM     28  H0S PEO     1      -4.471   1.867   4.606
+ATOM     29  H0T PEO     1      -4.537   0.095   4.579
+ATOM     30  H0U PEO     1      -6.493   1.836   5.991
+ATOM     31  H0V PEO     1      -6.462   0.046   5.879
+ATOM     32  H0W PEO     1      -8.716   1.790   4.752
+ATOM     33  H0X PEO     1      -8.767   1.010   6.365
+ATOM     34  H0Y PEO     1     -10.547   0.559   4.034
+ATOM     35  H0Z PEO     1     -10.684  -0.310   5.574
+ATOM     36  H10 PEO     1     -10.197  -2.467   4.363
+ATOM     37  H11 PEO     1     -10.128  -1.571   2.835
+ATOM     38  H12 PEO     1     -12.055  -3.725   3.547
+ATOM     39  H13 PEO     1     -11.985  -2.833   2.015
+ATOM     40  H14 PEO     1     -14.290  -1.953   2.424
+ATOM     41  H15 PEO     1     -14.359  -2.844   3.955
+ATOM     42  H16 PEO     1     -16.045  -4.989   1.603
+ATOM     43  H17 PEO     1     -16.153  -3.216   1.590
+ATOM     44  H18 PEO     1     -16.225  -4.119   3.140
+TER 
+CONECT    1    2 
+CONECT    2    3 
+CONECT    3    4 
+CONECT    4    5 
+CONECT    5    6 
+CONECT    6    7 
+CONECT    7    8 
+CONECT    8    9 
+CONECT    9   10 
+CONECT   10   11 
+CONECT   11   12 
+CONECT   12   13 
+CONECT   13   14 
+CONECT   14   15 
+CONECT   15   16 
+CONECT   16   17 
+CONECT   17   18 
+CONECT    1   19 
+CONECT    1   20 
+CONECT    1   21 
+CONECT    3   22 
+CONECT    3   23 
+CONECT    4   24 
+CONECT    4   25 
+CONECT    6   26 
+CONECT    6   27 
+CONECT    7   28 
+CONECT    7   29 
+CONECT    9   30 
+CONECT    9   31 
+CONECT   10   32 
+CONECT   10   33 
+CONECT   12   34 
+CONECT   12   35 
+CONECT   13   36 
+CONECT   13   37 
+CONECT   15   38 
+CONECT   15   39 
+CONECT   16   40 
+CONECT   16   41 
+CONECT   18   42 
+CONECT   18   43 
+CONECT   18   44 
+END
