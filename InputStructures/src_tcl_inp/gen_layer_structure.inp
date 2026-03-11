@@ -1,39 +1,51 @@
 tolerance 2.0
 filetype pdb
-output li_peo_vecmtfsi_layer.pdb
+output li_co32m_peo_vecmtfsi_layer.pdb
+movebadrandom
 
+################### Lithium surface layer ##############################
 # Lithium (fixed)
-structure ../required_pdbs/lithium_large.pdb
+structure ../li_surface/lithium_large.pdb
   number 1
   fixed 0. 0. 0. 0. 0. 0.
 end structure
 
-# PEO layer: 26 molecules
-structure ../required_pdbs/60PEO_Optimized_CH3terminated_editedterminal_edited.pdb
-  number 26
-  inside box 0. 0. 5.0  110. 110. 125.0
-end structure
+################### SEI layer ##########################################
+# x_min = 0;  y_min = 0;  z_min_SEI = max-z of Li-surface + \delta_z
+# x_max = lx; y_max = ly; z_max_SEI = z-of-SEI + z_min
 
-# VEC-STFSI Polymer: 100 molecules
-structure ../required_pdbs/modified.pdb
-  number 120
-  inside box 0. 0. 122.0  110. 110. 300.0
-end structure
-
-# Li atoms: 600 
-structure ../required_pdbs/Li_Atom.pdb
-  number 500
-  inside box 0. 0. 125.0 110. 110. 290.0
+# PEO layer
+structure ../SEI_Polymer/100PEO_Optimized.pdb
+  number 14
+  inside box 0. 0. 9.0  76.0 76.0 39.0 
 end structure
 
 # Li atoms inside PEO layer
-structure ../required_pdbs/Li_Atom.pdb
-  number 1284
-  inside box 0. 0. 5.0  110. 110. 125.0
+structure ../LiAtom/Li_Atom.pdb
+  number 1112
+  inside box 0. 0. 9.0  76.0 76.0 39.0
 end structure
 
 # counter-ions carbonate molecules inside PEO layer (half of lithium)
-structure ../required_pdbs/co3_2minus.pdb
-  number 642
-  inside box 0. 0. 5.0  110. 110. 125.0
+structure ../carbonate_ion/co3_2minus.pdb
+  number 556
+  inside box 0. 0. 9.0  76.0 76.0 39.0
 end structure
+
+
+################### Bulk layer #########################################
+# x_min = 0;  y_min = 0;  z_min_bulk = z_max_SEI 
+# x_max = lx; y_max = ly; z_max_bulk = z_max_SEI + lz_bulk + delta_z
+
+# VEC-STFSI Polymer: 100 molecules
+structure ../Bulk_Copolymer/modified.pdb
+  number 100
+  inside box 0. 0. 39.0  76.0 76.0 175.0
+end structure
+
+# Li atoms: 500 
+structure ../LiAtom/Li_Atom.pdb
+  number 500
+  inside box 0. 0. 39.0  76.0 76.0 175.0
+end structure
+
