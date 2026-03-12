@@ -1,3 +1,6 @@
+# Cross check with the excel file for dimensions
+# Name of the excel file: InputCalculations/input_structure.xlsx
+
 tolerance 2.0
 filetype pdb
 output li_co32m_peo_vecmtfsi_layer.pdb
@@ -5,7 +8,7 @@ movebadrandom
 
 ################### Lithium surface layer ##############################
 # Lithium (fixed)
-structure ../li_surface/lithium_large.pdb
+structure ../required_pdbs/lithium_large.pdb
   number 1
   fixed 0. 0. 0. 0. 0. 0.
 end structure
@@ -13,39 +16,44 @@ end structure
 ################### SEI layer ##########################################
 # x_min = 0;  y_min = 0;  z_min_SEI = max-z of Li-surface + \delta_z
 # x_max = lx; y_max = ly; z_max_SEI = z-of-SEI + z_min
-
+# z-of-SEI is an input: good guess is 3 nm
+# See columns R, N and O of the excel file for #of PEO/Li+/CO32-
+# See columns Z, AA and AF28 for X,Y,Z dimentions
 # PEO layer
-structure ../SEI_Polymer/100PEO_Optimized.pdb
-  number 14
-  inside box 0. 0. 9.0  76.0 76.0 39.0 
+structure ../required_pdbs/60PEO_Optimized_CH3terminated_editedterminal_edited.pdb
+  number 26
+  inside box 0. 0. 9.0  83.76 83.905 39.0 
 end structure
 
 # Li atoms inside PEO layer
-structure ../LiAtom/Li_Atom.pdb
-  number 1112
-  inside box 0. 0. 9.0  76.0 76.0 39.0
+structure ../required_pdbs/Li_Atom.pdb
+  number 1284
+  inside box 0. 0. 9.0  83.76 83.905 39.0
 end structure
 
 # counter-ions carbonate molecules inside PEO layer (half of lithium)
-structure ../carbonate_ion/co3_2minus.pdb
-  number 556
-  inside box 0. 0. 9.0  76.0 76.0 39.0
+structure ../required_pdbs/co3_2minus_edited.pdb
+  number 642
+  inside box 0. 0. 9.0  83.76 83.905 39.0
 end structure
 
 
 ################### Bulk layer #########################################
-# x_min = 0;  y_min = 0;  z_min_bulk = z_max_SEI 
-# x_max = lx; y_max = ly; z_max_bulk = z_max_SEI + lz_bulk + delta_z
+# x_min = 0;  y_min = 0;  z_min_bulk = z_max_SEI - delta_z
+# x_max = lx; y_max = ly; z_max_bulk = z_max_SEI + lz_bulk
+# Use -delta_z for zmin_bulk to blend the SEI with the bulk
+# See columns F and G for #of VEC-MTFSI/Li+
+# See columns AC for Z-dimension
 
 # VEC-STFSI Polymer: 100 molecules
-structure ../Bulk_Copolymer/modified.pdb
-  number 100
-  inside box 0. 0. 39.0  76.0 76.0 175.0
+structure ../required_pdbs/V27M5_150T_edited.pdb
+  number 120
+  inside box 0. 0. 38.0  83.76 83.905 175.0
 end structure
 
-# Li atoms: 500 
-structure ../LiAtom/Li_Atom.pdb
-  number 500
-  inside box 0. 0. 39.0  76.0 76.0 175.0
+# Li atoms: 600. Leave a small gap at the top and bottom
+structure ../required_pdbs/Li_Atom.pdb
+  number 600
+  inside box 0. 0. 40.0  83.76 83.905 173.0
 end structure
 
