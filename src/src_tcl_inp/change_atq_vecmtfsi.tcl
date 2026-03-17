@@ -61,7 +61,7 @@ proc change_at_type_name_q {oldName newName newType {newCharge "0.0"} {newResnam
 
 #-----------------------------------Main function--------------------------------------
 # Add the file prefix
-set fname "../../Copolymer_SingleChain/V27M5_150T"
+set fname "../../InputStructures/combined/V27M5_150T"
 set outname "${fname}_edited"
 
 puts "${fname}.car"
