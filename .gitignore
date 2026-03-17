@@ -1,2 +1,8 @@
 InputStructures/src_tcl_inp/*~
+InputStructures/src_py/*~
+InputStructures/src_lmp/*~
 InputCalculations/*
+InputCalculations/combined/*
+InputStructures/inp_coordfiles/*.psf
+InputStructures/inp_coordfiles/*.top
+Copolymer_SingleChain/*
