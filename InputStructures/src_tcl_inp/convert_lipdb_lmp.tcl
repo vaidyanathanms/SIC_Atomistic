@@ -2,7 +2,7 @@
 
 package require topotools
 
-set molname "../inp_coordfiles/co3_2minus" ;# without the extension
+set molname "../inpcoord_files/lithium_large" ;# without the extension
 set outname "${molname}_edited"
 
 # Load the PDB file - Should have the necessary PDB files
@@ -28,9 +28,9 @@ if {$n == 0} {
     puts "No atoms matched selection: $sel2"
     $sel2 delete
 } else {
-    set newResname "COI"
-    set newQ -1.20245
-    set newType "O1C"
+    set newResname "MOL"
+    set newQ 0.0000
+    set newType "Li"
 
     $sel2 set type      $newType
     $sel2 set charge    $newQ
@@ -38,43 +38,6 @@ if {$n == 0} {
     $sel2 delete
 }
 
-# Change Oxygens in COI
-set sel2 [atomselect $molID "resname COI and (name O02 or name O03)"]
-set n [$sel2 num]
-if {$n == 0} {
-    puts "No atoms matched selection: $sel2"
-    $sel2 delete
-} else {
-
-    set newResname "COI"
-    set newQ -1.20245
-    set newType "O2C"
-    
-    $sel2 set type      $newType
-    $sel2 set charge    $newQ
-    $sel2 set resname   $newResname
-    $sel2 delete
-}
-
-# Change Carbon in COI
-set sel2 [atomselect $molID "resname COI and name C01"]
-set n [$sel2 num]
-if {$n == 0} {
-    puts "No atoms matched selection: $sel2"
-    $sel2 delete
-} else {
-
-    set newResname "COI"
-    set newQ 1.607339
-    set newType "C1C"
-    
-    $sel2 set type      $newType
-    $sel2 set charge    $newQ
-    $sel2 set resname   $newResname
-    $sel2 delete
-}
-
-puts "Done."
 
 # Do topo operations to guess bonds/angles/dihedrals
 topo numatomtypes
