@@ -16,8 +16,8 @@ file_specs = [
 
 system = af.combine_lammps_system(file_specs, spacing=5.0)
 
-af.write_lammps_data(filename="../combined/combined_system.data", system=system,\
-                     box=((0.0, 300.0), (0.0, 300.0), (0.0, 300.0)),\
+af.write_lammps_data(filename="../../InputStructures/combined/combined_system.data", system=system,\
+                     box=((0.0, 178.5), (0.0, 178.5), (0.0, 178.5)),\
                      write_atoms='../../InputStructures/combined/all_atoms.data')
 
 print("Wrote combined_system.data")
