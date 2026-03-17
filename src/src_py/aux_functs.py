@@ -294,11 +294,11 @@ def write_lammps_data(filename, system, box=None, write_atoms=None):
         f.write(f"{zlo:.6f} {zhi:.6f} zlo zhi\n")
 
         write_coeff_section(f, "Masses", system["masses"])
-        write_coeff_section(f, "Pair Coeffs", system["pair_coeffs"])
-        write_coeff_section(f, "Bond Coeffs", system["bond_coeffs"])
-        write_coeff_section(f, "Angle Coeffs", system["angle_coeffs"])
-        write_coeff_section(f, "Dihedral Coeffs", system["dihedral_coeffs"])
-        write_coeff_section(f, "Improper Coeffs", system["improper_coeffs"])
+        write_coeff_section(f, "# Pair Coeffs", system["pair_coeffs"])
+        write_coeff_section(f, "# Bond Coeffs", system["bond_coeffs"])
+        write_coeff_section(f, "# Angle Coeffs", system["angle_coeffs"])
+        write_coeff_section(f, "# Dihedral Coeffs", system["dihedral_coeffs"])
+        write_coeff_section(f, "# Improper Coeffs", system["improper_coeffs"])
 
         f.write("\nAtoms\n\n")
         for a in system["atoms"]:
