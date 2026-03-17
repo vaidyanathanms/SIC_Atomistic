@@ -42,12 +42,6 @@ class LammpsData:
 
         self.read_data()
 
-    def split_comment(self, line):
-        if "#" in line:
-            left, right = line.split("#", 1)
-            return left.rstrip(), right.strip()
-        return line.rstrip(), ""
-
     def read_data(self):
         with open(self.filename, "r") as f:
             lines = f.readlines()
@@ -152,6 +146,14 @@ class LammpsData:
 
             i += 1
 
+
+    def split_comment(self, line):
+        if "#" in line:
+            left, right = line.split("#", 1)
+            return left.rstrip(), right.strip()
+        return line.rstrip(), ""
+
+            
     def parse_coeff_line(self, raw, store):
         left, comment = self.split_comment(raw)
         left = left.strip()
@@ -175,12 +177,16 @@ class LammpsData:
                 store[type_id] = {"coeffs": [], "label": label}
 
     def parse_atom_line(self, raw):
-        left, _ = self.split_comment(raw)
+        left, right = self.split_comment(raw)
         parts = left.split()
 
         if len(parts) < 7:
             return
 
+        comment = ""
+        if right.strip():
+            comment = "#" + right.strip()
+        
         self.atoms.append({
             "id": int(parts[0]),
             "mol": int(parts[1]),
@@ -190,6 +196,7 @@ class LammpsData:
             "y": float(parts[5]),
             "z": float(parts[6]),
             "extra": parts[7:],
+            "comments": comment,
         })
 
     def parse_bond_line(self, raw):

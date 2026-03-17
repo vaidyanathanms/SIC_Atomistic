@@ -81,7 +81,8 @@ def combine_lammps_system(file_specs, spacing=5.0):
                     "x": a["x"] + xshift,
                     "y": a["y"],
                     "z": a["z"],
-                    "extra": a["extra"],
+                    "extra": a.get("extra",[]),
+                    "comments": a.get("comments","")
                 })
 
             for b in data.bonds:
@@ -242,14 +243,20 @@ def write_lammps_data(filename, system, box=None, write_atoms=None):
             fat.write(f"{len(system['masses'])} atom types\n")
 
             fat.write("\nAtoms\n\n")
+
             for a in system["atoms"]:
                 extra = ""
-                if a["extra"]:
+                comments = a.get("comments","")
+                if a.get("extra"):
                     extra = " " + " ".join(a["extra"])
+                if comments:
+                    extra += " " + comments
+
                 fat.write(
                     f"{a['id']} {a['mol']} {a['type']} {a['charge']:.8f} "
                     f"{a['x']:.8f} {a['y']:.8f} {a['z']:.8f}{extra}\n"
                 )
+
     
     if box is None:
         if system["atoms"]:
@@ -295,9 +302,13 @@ def write_lammps_data(filename, system, box=None, write_atoms=None):
 
         f.write("\nAtoms\n\n")
         for a in system["atoms"]:
+
             extra = ""
-            if a["extra"]:
+            comments = a.get("comments","")
+            if a.get("extra"):
                 extra = " " + " ".join(a["extra"])
+            if comments:
+                extra += " " + comments
 
             f.write(
                 f"{a['id']} {a['mol']} {a['type']} {a['charge']:.8f} "
