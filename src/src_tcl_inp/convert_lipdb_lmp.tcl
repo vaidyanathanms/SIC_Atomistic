@@ -2,7 +2,7 @@
 
 package require topotools
 
-set molname "../inpcoord_files/lithium_large" ;# without the extension
+set molname "../../InputStructures/inpcoord_files/lithium_large" ;# without the extension
 set outname "${molname}_edited"
 
 # Load the PDB file - Should have the necessary PDB files
