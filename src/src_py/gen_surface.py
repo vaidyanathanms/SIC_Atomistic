@@ -41,7 +41,7 @@ li_large.center(vacuum=vacuum_z, axis=2)
 # ===============================
 # STEP 3: Save the expanded slab
 # ===============================
-output_file = '../../inp_coordfiles/lithium_large.pdb'
+output_file = '../../InputStructures/inp_coordfiles/lithium_large.pdb'
 write(output_file, li_large)
 
 print(f"Expanded Lithium slab written to {output_file}.")
