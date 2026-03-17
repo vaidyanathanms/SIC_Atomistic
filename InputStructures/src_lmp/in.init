@@ -1,0 +1,66 @@
+#####################################################
+# Stage 1: Initial Phase Using NVE/limit            #
+# Version: Mar-16-2026                              #
+#####################################################
+
+# Main Variable Definitions
+variable fname index combined_system_edited.data 
+
+# Initialization
+units		real
+boundary	p p f
+atom_style	full
+read_data	${fname}
+
+# Neighbor information
+neighbor        2.0 bin
+neigh_modify	every 10 one 10000
+
+# Pair Information
+bond_style	harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+bond_coeff	bond_coeff.dat
+
+angle_style     harmonic
+angle_coeff     angle_coeff.dat
+
+dihedral_style	opls
+improper_style 	dihed_coeff.dat
+
+pair_style      lj/cut/coul/long 1.122462 10.0
+pair_coeff	pair_coeff.dat 
+kspace_style	pppm 0.00001
+kspace_modify   slab 3.0
+dielectric	1
+
+# Define Groups
+group bottom_atoms type 1
+group not_bottom subtract all bottom_atoms
+
+#####################################################
+# Initial Dynamics (nve/limit at kT=1)
+#####################################################
+
+# Initiate/Write Atoms and Other Details
+variable        ts equal step
+velocity 	not_bottom create 300 1231
+thermo_style	custom step temp pe
+thermo          1000
+dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
+
+# Main Fixes
+fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
+fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
+fix  2 not_bottom langevin 1 1 6.99 904297
+fix  freeze bottom_atoms setforce NULL NULL 0.0
+fix  1 all nve/limit 0.03
+
+# Run Styles
+run_style verlet
+restart   5000 restart1 restart2
+restart   50000 archival_*.restart
+timestep  0.01
+run	  100000
+unfix 1
+unfix 2
+write_restart 	restart.init
