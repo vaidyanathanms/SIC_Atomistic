@@ -11,25 +11,31 @@ atom_style	full
 read_restart	restart1
 
 # Neighbor information
-neighbor        1.0 bin
+neighbor        5.0 bin
 neigh_modify	every 10 one 10000
 
 # Pair Information
-bond_style	harmonic
+pair_style      lj/cut/coul/long 8.0 15.0
+include         pair_coeff.dat
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style      harmonic
 special_bonds   lj/coul 0.0 0.0 0.5
-bond_coeff	bond_coeff.dat
+include         bond_coeff.dat
 
 angle_style     harmonic
-angle_coeff     angle_coeff.dat
+include         angle_coeff.dat
 
-dihedral_style	opls
-improper_style 	dihed_coeff.dat
+dihedral_style  opls
+include         dihed_coeff.dat
 
-pair_style      lj/cut/coul/long 1.122462 10.0
-pair_coeff	pair_coeff.dat
-kspace_style	pppm 0.00001
+improper_style  none
+
+# Electrostatic Information
+kspace_style    pppm 0.00001
 kspace_modify   slab 3.0
-dielectric	1
+dielectric      1
 
 # Define Groups
 group bottom_atoms type 1
