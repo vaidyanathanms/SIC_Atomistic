@@ -53,7 +53,7 @@ with open(output_file, "w") as f:
 
     f.write("# Pair Coefficients generated using geometric mixing\n")
     f.write(f'#NewType_ID-1\tNewType_ID-2\tepsilon (kcal/mol)\tsigma (Angstrom)'
-            'cut-off rc (Angstrom)\t # Comments \n\n')
+            '\tcut-off rc (Angstrom)\t # Comments \n\n')
     
     for r1, r2 in combinations_with_replacement(records, 2):
         eps_ij = geom_mean(r1["epsilon"], r2["epsilon"])

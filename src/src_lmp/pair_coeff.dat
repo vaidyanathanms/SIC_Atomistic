@@ -1,5 +1,5 @@
 # Pair Coefficients generated using geometric mixing
-#NewType_ID-1	NewType_ID-2	epsilon (kcal/mol)	sigma (Angstrom)cut-off rc (Angstrom)	 # Comments 
+#NewType_ID-1	NewType_ID-2	epsilon (kcal/mol)	sigma (Angstrom)	cut-off rc (Angstrom)	 # Comments 
 
 pair_coeff 1 1 2.15105 2.49000 6.22500 # Li-LI/Surf-Li-LI/Surf
 pair_coeff 1 2 0.37679 2.95212 7.38029 # Li-LI/Surf-C-EO/SEI
