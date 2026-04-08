@@ -1,28 +1,28 @@
 # Pair Coefficients generated using geometric mixing
-#NewType_ID-1	NewType_ID-2	epsilon (kj/mol)	sigma (Angstrom)cut-off rc (Angstrom)	 # Comments 
+#NewType_ID-1	NewType_ID-2	epsilon (kcal/mol)	sigma (Angstrom)cut-off rc (Angstrom)	 # Comments 
 
-pair_coeff 1 1 2.15105 2.80000 7.00000 # Li-LI/Surf-Li-LI/Surf
-pair_coeff 1 2 0.37679 3.13050 7.82624 # Li-LI/Surf-C-EO/SEI
-pair_coeff 1 3 0.25403 2.64575 6.61438 # Li-LI/Surf-H-EO/SEI
-pair_coeff 1 4 0.54877 2.84956 7.12390 # Li-LI/Surf-O-EO/SEI
-pair_coeff 1 5 0.92759 1.97990 4.94975 # Li-LI/Surf-Li-LP/SEI 
-pair_coeff 1 6 0.38804 3.15278 7.88194 # Li-LI/Surf-C1-COI/SEI
-pair_coeff 1 7 0.67210 2.87889 7.19722 # Li-LI/Surf-O1-COI/SEI
-pair_coeff 1 8 0.60471 2.95567 7.38918 # Li-LI/Surf-O2-COI/SEI
-pair_coeff 1 9 0.37679 3.13050 7.82624 # Li-LI/Surf-C1-MT/Bulk
-pair_coeff 1 10 0.37679 3.13050 7.82624 # Li-LI/Surf-C1-VEC/Bul
-pair_coeff 1 11 0.38804 3.15278 7.88194 # Li-LI/Surf-C2-MT/Bulk
-pair_coeff 1 12 0.38804 3.15278 7.88194 # Li-LI/Surf-C2-VEC/Bul
-pair_coeff 1 13 0.35925 2.84956 7.12390 # Li-LI/Surf-F-MT/Bulk
-pair_coeff 1 14 0.25403 2.64575 6.61438 # Li-LI/Surf-H-M/Bulk
-pair_coeff 1 15 0.25403 2.64575 6.61438 # Li-LI/Surf-H-V/Bulk
-pair_coeff 1 16 0.60471 3.01662 7.54155 # Li-LI/Surf-N-MT/Bulk
-pair_coeff 1 17 0.54877 2.84956 7.12390 # Li-LI/Surf-O1-MT/Bulk
-pair_coeff 1 18 0.54877 2.84956 7.12390 # Li-LI/Surf-O1-VEC/Bul
-pair_coeff 1 19 0.67210 2.87889 7.19722 # Li-LI/Surf-O2-MT/Bulk
-pair_coeff 1 20 0.67210 2.87889 7.19722 # Li-LI/Surf-O2-VEC/Bul
-pair_coeff 1 21 0.60471 2.87889 7.19722 # Li-LI/Surf-O3-MT/Bulk
-pair_coeff 1 22 0.73332 3.15278 7.88194 # Li-LI/Surf-S-MT/Bulk
+pair_coeff 1 1 2.15105 2.49000 6.22500 # Li-LI/Surf-Li-LI/Surf
+pair_coeff 1 2 0.37679 2.95212 7.38029 # Li-LI/Surf-C-EO/SEI
+pair_coeff 1 3 0.25403 2.49499 6.23749 # Li-LI/Surf-H-EO/SEI
+pair_coeff 1 4 0.54877 2.68719 6.71798 # Li-LI/Surf-O-EO/SEI
+pair_coeff 1 5 0.92759 1.86708 4.66771 # Li-LI/Surf-Li-LP/SEI 
+pair_coeff 1 6 0.38804 2.97313 7.43282 # Li-LI/Surf-C1-COI/SEI
+pair_coeff 1 7 0.67210 2.71485 6.78712 # Li-LI/Surf-O1-COI/SEI
+pair_coeff 1 8 0.60471 2.78726 6.96814 # Li-LI/Surf-O2-COI/SEI
+pair_coeff 1 9 0.37679 2.95212 7.38029 # Li-LI/Surf-C1-MT/Bulk
+pair_coeff 1 10 0.37679 2.95212 7.38029 # Li-LI/Surf-C1-VEC/Bul
+pair_coeff 1 11 0.38804 2.97313 7.43282 # Li-LI/Surf-C2-MT/Bulk
+pair_coeff 1 12 0.38804 2.97313 7.43282 # Li-LI/Surf-C2-VEC/Bul
+pair_coeff 1 13 0.35925 2.68719 6.71798 # Li-LI/Surf-F-MT/Bulk
+pair_coeff 1 14 0.25403 2.49499 6.23749 # Li-LI/Surf-H-M/Bulk
+pair_coeff 1 15 0.25403 2.49499 6.23749 # Li-LI/Surf-H-V/Bulk
+pair_coeff 1 16 0.60471 2.84473 7.11183 # Li-LI/Surf-N-MT/Bulk
+pair_coeff 1 17 0.54877 2.68719 6.71798 # Li-LI/Surf-O1-MT/Bulk
+pair_coeff 1 18 0.54877 2.68719 6.71798 # Li-LI/Surf-O1-VEC/Bul
+pair_coeff 1 19 0.67210 2.71485 6.78712 # Li-LI/Surf-O2-MT/Bulk
+pair_coeff 1 20 0.67210 2.71485 6.78712 # Li-LI/Surf-O2-VEC/Bul
+pair_coeff 1 21 0.60471 2.71485 6.78712 # Li-LI/Surf-O3-MT/Bulk
+pair_coeff 1 22 0.73332 2.97313 7.43282 # Li-LI/Surf-S-MT/Bulk
 pair_coeff 2 2 0.06600 3.50000 8.75000 # C-EO/SEI-C-EO/SEI
 pair_coeff 2 3 0.04450 2.95804 7.39510 # C-EO/SEI-H-EO/SEI
 pair_coeff 2 4 0.09612 3.18591 7.96477 # C-EO/SEI-O-EO/SEI
