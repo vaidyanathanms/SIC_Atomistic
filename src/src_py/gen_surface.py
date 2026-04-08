@@ -15,7 +15,7 @@ target_y = 74.0
 # ===============================
 # Create (110) surface: size = (nx, ny, nz)
 # Note ny should be even
-unit_slab = bcc110('Li', size=(1, 2, 4), vacuum=0.0, orthogonal=True)
+unit_slab = bcc110('Li', size=(1, 2, 16), vacuum=0.0, orthogonal=True)
 write('Li_124_surface.pdb',unit_slab)
 write('Li_124_surface.xyz',unit_slab)
 
