@@ -52,7 +52,7 @@ for row in ws.iter_rows(min_row=header_row+1, values_only=True):
 with open(output_file, "w") as f:
 
     f.write("# Pair Coefficients generated using geometric mixing\n")
-    f.write(f'#NewType_ID-1\tNewType_ID-2\tepsilon (kj/mol)\tsigma (Angstrom)'
+    f.write(f'#NewType_ID-1\tNewType_ID-2\tepsilon (kcal/mol)\tsigma (Angstrom)'
             'cut-off rc (Angstrom)\t # Comments \n\n')
     
     for r1, r2 in combinations_with_replacement(records, 2):
