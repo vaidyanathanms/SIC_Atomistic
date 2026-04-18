@@ -2,6 +2,7 @@ src/src_tcl_inp/*~
 src/src_py/*~
 src/src_lmp/*~
 InputStructures/combined
+InputStructures/input_datafiles/*
 InputStructures/inpcoord_files/*.psf
 InputStructures/inpcoord_files/*.top
 Copolymer_SingleChain/*
