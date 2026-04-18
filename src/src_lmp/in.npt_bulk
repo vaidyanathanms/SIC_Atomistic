@@ -1,0 +1,76 @@
+#####################################################
+# Stage 3: Main Run Using Nose-Hoover               #
+# Version: Mar-16-2026                              #
+#####################################################
+
+
+# Initialization
+units		real
+boundary	p p p
+atom_style	full
+read_restart	restart1
+
+# Neighbor information
+neighbor        5.0 bin
+neigh_modify	every 10 one 10000
+
+# Pair Information
+pair_style      lj/cut/coul/long 8.0 15.0
+include         pair_coeff.dat
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style      harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+include         bond_coeff.dat
+
+angle_style     harmonic
+include         angle_coeff.dat
+
+dihedral_style  opls
+include         dihed_coeff.dat
+
+improper_style  none
+
+# Electrostatic Information
+kspace_style    pppm 0.00001
+kspace_modify   slab 3.0
+dielectric      1
+
+
+#####################################################
+# Equilibration (Nose-Hoover dynamics at 300K)
+#####################################################
+
+# Initiate/Write Atoms and Other Details
+variable        ts equal step
+thermo_style	custom step temp pe
+thermo          10000
+dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
+
+# Main Fixes
+fix  mom all momentum 10000000 linear 1 1 1 rescale
+fix  fast polymer shake 0.0001 b 2
+fix  integrate all npt temp 300.0 300.0 100.0 iso 1.0 1.0 1000.0
+
+# Run and Restart Styles
+run_style verlet
+restart   5000 restart1 restart2
+restart   500000 archival_*.restart
+timestep  0.5
+run	  10000000
+
+timestep  1.0
+run  5000000
+
+timestep  2.0
+run  25000000
+
+# Unfix
+unfix mom
+unfix fast
+unfix integrate
+
+# Write Outputs
+write_data      nvt.dat pair ij
+write_restart 	restart.nvt

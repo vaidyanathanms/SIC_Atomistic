@@ -1,0 +1,86 @@
+#####################################################
+# Stage 1: Initial Phase Using NVE/limit            #
+# Version: Mar-16-2026                              #
+#####################################################
+
+# Main Variable Definitions
+variable fname index pure_sei.data 
+
+# Initialization
+units		real
+boundary	p p p
+atom_style	full
+read_data	${fname}
+
+# Neighbor information
+neighbor        5.0 bin
+neigh_modify	every 10 one 10000
+
+# Pair Information
+pair_style      lj/cut/coul/long 8.0 15.0
+include 	pair_coeff.dat 
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style	harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+include		bond_coeff.dat
+
+angle_style     harmonic
+include		angle_coeff.dat
+
+dihedral_style	opls
+include 	dihed_coeff.dat
+
+improper_style  none
+
+# Electrostatic Information
+kspace_style	pppm 0.00001
+kspace_modify   slab 3.0
+dielectric	1
+
+# Define Groups
+group li_surface type 1
+group not_surface subtract all li_surface
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
+
+# Define mobile groups (except bottom two)
+group mobile subtract all li_bottom
+
+# Define initial velocities
+velocity li_surface set 0.0 0.0 0.0
+velocity not_surface create 100.0 430483 dist gaussian mom yes
+
+###############################################################
+# Initial Dynamics (nve/limit at 300K). Freeze all surface atoms
+##############################################################
+
+# Initiate/Write Atoms and Other Details
+variable        ts equal step
+velocity 	mobile create 300 123123 mom yes
+thermo_style	custom step temp pe
+thermo          1000
+dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
+
+# Main Fixes
+fix  thermostat not_surface langevin 100.0 300.0 1000.0 48279 zero yes # don't thermostat initially
+fix  integrate not_surface nve/limit 0.005
+
+# Run Styles
+run_style verlet
+restart   5000 restart1 restart2
+restart   50000 archival_*.restart
+timestep  0.05
+run	  1000000
+
+# Unfix
+unfix thermostat
+unfix integrate
+
+# Write Outputs
+write_data 	nve_limit.data
+write_restart 	restart.init
