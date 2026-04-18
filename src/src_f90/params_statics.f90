@@ -32,8 +32,10 @@ MODULE STATICPARAMS
   INTEGER :: major_axis
   INTEGER :: interfgrp_a, interfgrp_b
   INTEGER :: maxinterf
+  INTEGER :: num_mons_per_layer
   REAL    :: rneigh_cut,rcatan_cut,rcatpol_cut1,rcatpol_cut2
   REAL    :: dbinavg, major_boxval
+  REAL    :: epspre, epsinit, segper, epsinc
   
   ! All bulk structure analysis flags
   INTEGER :: rgcalc, rgall, rgavg
@@ -98,8 +100,8 @@ MODULE STATICPARAMS
   !Required Arrays - Interfacial calculations
   REAL, ALLOCATABLE, DIMENSION(:)    :: interpos
   INTEGER, ALLOCATABLE, DIMENSION(:) :: domtyp
-  INTEGER, ALLOCATABLE, DIMENSION(:) :: dompos
-
+  INTEGER, ALLOCATABLE, DIMENSION(:) :: seg_aid, seg_typ,seg_typcnt
+  
   !Required Arrays - Layer-wise calculations
 !!$  REAL, DIMENSION(0:r2dmaxbin-1,3,pmax) :: rdf2darray,rdf2deo,rdf2dps
 !!$  REAL, ALLOCATABLE, DIMENSION(:,:) :: rdflocal
