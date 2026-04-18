@@ -1,0 +1,54 @@
+#####################################################
+# Stage 1: Initial Phase Using NVE/limit            #
+# Version: Mar-16-2026                              #
+#####################################################
+
+# Main Variable Definitions
+variable fname index combined_system_edited.data 
+
+# Initialization
+units		real
+boundary	p p f
+atom_style	full
+read_data	${fname}
+
+# Neighbor information
+neighbor        5.0 bin
+neigh_modify	every 10 one 10000
+
+# Pair Information
+pair_style      lj/cut/coul/long 8.0 15.0
+include 	pair_coeff.dat 
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style	harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+include		bond_coeff.dat
+
+angle_style     harmonic
+include		angle_coeff.dat
+
+dihedral_style	opls
+include 	dihed_coeff.dat
+
+improper_style  none
+
+# Electrostatic Information
+kspace_style	pppm 0.00001
+kspace_modify   slab 3.0
+dielectric	1
+
+# Define Groups
+group li_surface type 1
+group not_surface subtract all li_surface
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
+
+delete_atoms group li_surface
+
+write_data 	combined_system_nosurface.data pair ij
+write_restart   restart.nosurf

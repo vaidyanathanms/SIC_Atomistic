@@ -1,0 +1,81 @@
+#####################################################
+# Stage 1: Initial Phase Using NVE/limit            #
+# Version: Mar-16-2026                              #
+#####################################################
+
+# Main Variable Definitions
+variable fname index combined_system_edited_nosurf.data 
+
+# Initialization
+units		real
+boundary	p p f
+atom_style	full
+read_data	${fname}
+
+# Neighbor information
+neighbor        5.0 bin
+neigh_modify	every 10 one 10000
+
+# Pair Information
+pair_style      lj/cut/coul/long 8.0 15.0
+include 	pair_coeff.dat 
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style	harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+include		bond_coeff.dat
+
+angle_style     harmonic
+include		angle_coeff.dat
+
+dihedral_style	opls
+include 	dihed_coeff.dat
+
+improper_style  none
+
+# Electrostatic Information
+kspace_style	pppm 0.00001
+kspace_modify   slab 3.0
+dielectric	1
+
+# Define Groups
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
+
+#####################################################
+# Initial Dynamics (nve/limit at 300K)
+#####################################################
+
+# Initiate/Write Atoms and Other Details
+variable        ts equal step
+velocity 	all create 300 1231
+thermo_style	custom step temp pe
+thermo          1000
+dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
+
+# Main Fixes
+fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
+fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
+fix  fast all langevin 1 1 6.99 904297
+fix  integrate all nve/limit 0.01
+
+# Run and Restart Styles
+run_style verlet
+restart   5000 restart1 restart2
+restart   50000 archival_*.restart
+timestep  0.01
+run	  100000
+
+# Unfix
+unfix wallhi
+unfix walllow
+unfix fast
+unfix integrate
+
+#Write outputs
+write_data 	nve_limit.data
+write_restart 	restart.init
