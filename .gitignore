@@ -4,6 +4,8 @@ src/src_lmp/*~
 InputStructures/combined
 InputStructures/input_datafiles/*
 InputStructures/inpcoord_files/*.psf
+InputStructures/inpcoord_files/*.data
+InputStructures/inpcoord_files/*extra*
 InputStructures/inpcoord_files/*.top
 Copolymer_SingleChain/*
 src/src_py/__pycache__/
