@@ -8,7 +8,7 @@ movebadrandom
 
 ################### Lithium surface layer ##############################
 # Lithium (fixed)
-structure ../../InputStructures/inpcoord_files/lithium_large.pdb
+structure ../../InputStructures/inpcoord_files/lithium_large_edited.pdb
   number 1
   fixed 0. 0. 0. 0. 0. 0.
 end structure
@@ -26,7 +26,7 @@ structure ../../InputStructures/inpcoord_files/60PEO_Optimized_CH3terminated_edi
 end structure
 
 # Li atoms inside PEO layer
-structure ../inpcoord_files/Li_Atom.pdb
+structure ../../InputStructures/inpcoord_files/Li_Atom.pdb
   number 1284
   inside box 0. 0. 9.0  83.76 83.905 39.0
 end structure
@@ -48,12 +48,12 @@ end structure
 # VEC-STFSI Polymer: 120 molecules
 structure ../../InputStructures/inpcoord_files/V27M5_150T_edited.pdb
   number 120
-  inside box 0. 0. 38.0  83.76 83.905 175.0
+  inside box 0. 0. 38.0  83.76 83.905 157.0
 end structure
 
 # Li atoms: 600. Leave a small gap at the top and bottom
 structure ../../InputStructures/inpcoord_files/Li_Atom.pdb
   number 600
-  inside box 0. 0. 40.0  83.76 83.905 173.0
+  inside box 0. 0. 40.0  83.76 83.905 157.0
 end structure
 
