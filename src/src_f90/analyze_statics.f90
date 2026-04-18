@@ -150,7 +150,7 @@ SUBROUTINE READ_ANA_IP_FILE()
 
         READ(anaread,*,iostat=ierr) p_iontype       
 
-     !Here onwards static properties
+     !Density profiles
      ELSEIF(dumchar == 'compute_dens') THEN
 
         IF(grpflag /= 1) STOP "Define groups before density..."
@@ -170,14 +170,54 @@ SUBROUTINE READ_ANA_IP_FILE()
         
         densarray(0,0) = 9999 ! dummy type for distance "r"
         READ(anaread,*,iostat=ierr) (densarray(0,j), j = 1,ndens_grps)
-        
+     !Layer-wise static properties
      ELSEIF(dumchar == 'compute_interfaces') THEN
 
         interfflag = 1;  layerana_flag = 1
         IF(densflag == 0) STOP "Set density groups before interfaces..&
              &"
         READ(anaread,*,iostat=ierr) interfgrp_a, interfgrp_b
+
+     ELSEIF(dumchar == layer_groups) THEN
+        layer_grpflag = 1
+        READ(anaread,*,iostat=ierr) nlayer_groups
+
+        ALLOCATE(all_layergrp_typarr(0:ntotatoms,nlayer_groups),stat&
+             &=AllocateStatus)
+        IF(AllocateStatus/=0) STOP "did not allocate all_layergrp_typa&
+             &rr"
+
+        all_layergrp_typarr = 0 ! ZERO everything
         
+        DO i = 1,nlayer_groups
+           
+           READ(anaread,'(A)',iostat=ierr) charline
+           IF(ierr /= 0) THEN
+              PRINT *, "Error reading layer group size at group-",i
+              STOP
+           END IF
+           
+           READ(charline,*) all_layergrp_typarr(0,i), ntypes_per_group
+           ALLOCATE(types_in_group(ntypes_per_group),stat&
+                &=AllocateStatus)
+           IF(AllocateStatus/=0) STOP "did not allocate types_in_group&
+                &"
+
+           READ(charline,*,iostat=ierr) u, ntypes_per_group,&
+                & (types_in_group(j), j = 1,ntypes_per_group)
+           IF(ierr /= 0) THEN
+              PRINT *, "Mismatch in #of groups in group", i
+              STOP
+           END IF
+           
+           CALL FILL_LAYERGROUP_ARRAY(i,ntypes_per_group&
+                &,types_in_group)
+           DEALLOCATE(types_in_group)
+
+        END DO
+
+        
+     !Global static properties
      ELSEIF(dumchar == 'compute_rdf') THEN
 
         rdfflag = 1
@@ -301,6 +341,10 @@ SUBROUTINE DEFAULTVALUES()
   ! Initialize density profile quantities
   d_maxbin   = 200; major_axis = 3
 
+  ! Initialize layerwise property quantities
+  num_mons_per_layer = 0
+  epspre = 0; espsinit = 0; segper=0; epsinc = 0
+  
   ! Interfacial profiles
   interfgrp_a = 0; interfgrp_b = 0; maxinterf = 4
   
@@ -310,6 +354,7 @@ SUBROUTINE DEFAULTVALUES()
   
   ! Initialize dynamical quantities
   rcatpol_cut1 = 0.0; rcatpol_cut2 = 0.0
+  
 END SUBROUTINE DEFAULTVALUES
 
 !--------------------------------------------------------------------
@@ -606,6 +651,43 @@ END SUBROUTINE FILL_GROUP_ARRAY
 
 !--------------------------------------------------------------------
 
+SUBROUTINE FILL_LAYERGROUP_ARRAY(group_id,ntypes_per_group&
+     &,types_in_group_id)
+
+  USE STATICPARAMS
+
+  IMPLICIT NONE
+
+  INTEGER, INTENT(IN) :: group_id, ntypes_per_group
+  INTEGER, INTENT(IN) :: types_in_group_id(1:ntypes_per_group)
+  INTEGER :: i,j,cnt_atoms
+
+  cnt_atoms = 0
+
+  DO i = 1,ntotatoms
+
+     IF(ANY(aidvals(i,3) == types_in_group_id)) THEN
+
+        all_layergrp_typarr(i,group_id) = 1
+        cnt_atoms = cnt_atoms + 1
+
+     END IF
+
+  END DO
+  
+  ! Write out data
+  WRITE(logout,*) "*Layer-Group ID: ",group_id, " ***************"
+  WRITE(logout,*) "Layer-Group-ID/ntypes_in_group/types: ", group_id,&
+       & ntypes_per_group,types_in_group
+  WRITE(logout,*) "Number of atoms in group-", group_id, " is ",&
+       & cnt_atoms
+  WRITE(logout,*) "************************************************"
+  PRINT *, "Number of atoms in group-", group_id, " is ", cnt_atoms
+
+END SUBROUTINE FILL_LAYERGROUP_ARRAY
+
+!--------------------------------------------------------------------
+
 SUBROUTINE OUTPUT_ALL_GROUPS()
 
   USE STATICPARAMS
@@ -810,7 +892,7 @@ SUBROUTINE STRUCT_INIT()
         ELSE
            pairs_rdf(i,3) = t1*t2 !g_AB(r)
         END IF
-
+ 
      END DO
 
   END IF
@@ -1563,6 +1645,8 @@ SUBROUTINE LAYERWISE_MAIN()
   boxval = boxvalarr(1)
   rvolval = box_xl*box_yl*box_zl
 
+  CALL DOMCLASSIFY() ! Classify domain according to dens profile
+  
   DO i = 1,nframes
 
      box_xl = boxx_arr(i)
@@ -1665,15 +1749,6 @@ SUBROUTINE COMPUTE_INTERFACES()
      END IF
 
   END DO
-!Right most end - only for periodic boxes
-!!$  IF((densarray(d_maxbin,interfcol_a) .GE. densarray(d_maxbin&
-!!$       &,interfcol_b)) .AND.  (densarray(1,interfcol_a) .LE.&
-!!$       & densarray(1,interfcol_b))) THEN
-!!$
-!!$     icount = icount + 1
-!!$     dumdens_interarr(icount) = (maxbin - 1 + 0.75)*dbinavg
-!!$
-!!$  END IF
 
   maxdens = icount
 
@@ -1690,6 +1765,8 @@ SUBROUTINE COMPUTE_INTERFACES()
 
   maxinterf = maxdens
 
+  IF(maxinterf .NE. 1 ) PRINT *, "More than one interface found.."
+  
   ALLOCATE (interpos(maxinterf), stat = AllocateStatus)
   IF(AllocateStatus /=0 ) STOP "***Allocation inter not proper***"
 
@@ -1758,6 +1835,122 @@ SUBROUTINE MAP_GROUP_TO_COL(grp_type,col_val)
 END SUBROUTINE MAP_GROUP_TO_COL
 
 !--------------------------------------------------------------------
+SUBROUTINE DOMCLASSIFY(tval)
+
+  USE STATICPARAMS
+
+  IMPLICIT NONE
+
+  INTEGER :: i,j, flagdom, AllocateStatus, flagnew
+  REAL :: par_pos
+  INTEGER, DIMENSION(1:maxinter) :: domAdum, domBdum
+  INTEGER, INTENT(IN) :: tval
+
+  DO i = 1, maxinter
+        
+     domAdum(i) = 0
+     domBdum(i) = 0
+     
+  END DO
+
+  DO i = 1,ntotatoms
+     
+     IF(major_axis == 1) THEN
+        par_pos = trx_lmp(i,tval) - boxval*floor(trx_lmp(i,tval)&
+             &/boxval)
+     ELSE IF(major_axis == 2) THEN 
+        par_pos = try_lmp(i,tval) - boxval*floor(try_lmp(i,tval)&
+             &/boxval)
+     ELSE
+        par_pos = trz_lmp(i,tval) - boxval*floor(trz_lmp(i,tval)&
+             &/boxval)
+     END IF
+
+     flagdom = 0; flaggrp = 0
+     IF(par_pos == 0.0000000) par_pos = 10**(-8)
+     
+     IF(par_pos .GE. 0.0 .AND. par_pos .LE. interpos(1)) THEN
+        
+        flagdom = 1
+        IF(ANY(allgrp_typarr(interfgrp_a,:) == aidvals(i,3))) THEN
+
+           domAdum(1) = domAdum(1) + 1; flaggrp = 1
+
+        ELSEIF(ANY(allgrp_typarr(interfgrp_b,:) == aidvals(i,3)) THEN
+
+           domBdum(1) = domBdum(1) + 1; flaggrp = 1
+
+        END IF
+
+     END IF
+     
+     IF(par_pos .GT. interpos(1) .AND. par_pos .LE. boxval) THEN
+              
+        IF(flagdom == 1) STOP "particle binned twice"
+
+        IF(ANY(allgrp_typarr(interfgrp_a,:) == aidvals(i,3))) THEN
+           domAdum(2) = domAdum(2) + 1
+           
+        ELSEIF(ANY(allgrp_typarr(interfgrp_b,:) == aidvals(i,3)) THEN              
+           domBdum(2) = domBdum(2) + 1; flaggrp = 1
+           
+        END IF
+        
+     END IF
+
+  END DO
+           
+  DO i = 1, maxinterf
+     
+     IF(domAdum(i) > domBdum(i)) THEN
+        
+        domtyp(i) = 1
+        
+     ELSEIF(domBdum(i) > domAdum(i)) THEN
+        
+        domtyp(i) = 2
+        
+     ELSE
+        
+        PRINT *,"Something wrong in distribution"
+        PRINT *,"Number of particles in",i,"dom", domAdum(i),&
+             & domBdum(i)
+        
+        WRITE(logout,*),"Something wrong in distribution"
+        WRITE(logout,*),"Number of particles in",i,"dom", domAdum(i),&
+             & domBdum(i)
+        
+        STOP
+        
+     END IF
+     
+  END DO
+  
+  WRITE(logout,*) "The domain types are "
+  
+  DO i = 1,maxinterf
+     
+     IF(domtyp(i) == 1) THEN
+        
+        WRITE(logout,*) i,domtyp(i), "Domain A"
+        
+     ELSE
+        
+        WRITE(logout,*) i,domtyp(i), "Domain B"
+        
+     END IF
+     
+  END DO
+     
+  ALLOCATE(widdoms(maxinterf),stat = AllocateStatus)
+  IF(AllocateStatus/=0) STOP "did not allocate widdoms"
+  
+  widdoms(1) = interf(1)
+  widdoms(2) = boxval - interf(maxinter)
+  
+END SUBROUTINE DOMCLASSIFY
+
+!--------------------------------------------------------------------
 
 SUBROUTINE COMPARTMENTALIZE_PARTICLES(tval)
 
@@ -1765,105 +1958,147 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES(tval)
 
   IMPLICIT NONE
 
-  INTEGER :: i,j,k,p,allocatestatus,c1,c2,c3,flagz,flagz2,flagbin,a1id
-  REAL    :: par_pos, segeps, domcheck, eps2,eps1
-  REAL    :: interin, interout, interin2, interout2
+  INTEGER :: i,j,k,p,AllocateStatus,flagbin,a1id
+  REAL    :: par_pos, domcheck
+  REAL    :: segeps_domA,segeps_domB, eps1,eps2
+  REAL    :: interin_domA, interout_domA,domwidth_domA
+  REAL    :: interin_domB, interout_domB,domwidth_domB
   INTEGER, INTENT(IN) :: tval
-  INTEGER, ALLOCATABLE, DIMENSION(:) :: dum_seg, dum_typ
+  INTEGER, ALLOCATABLE, DIMENSION(:) :: dum_aid, dum_typ
 
-  domcheck = 0.0; epsinit = 0
-  ! Find the first value where SEI starts to rise - to account for
+  IF(tval == 1) THEN
+     ALLOCATE(seg_typcnt(1:natomtypes),stat=AllocateStatus)
+     IF(AllocateStatus/=0) STOP "did not allocate seg_typcnt"
+  END IF
+
+  
+  domcheck = 0.0; epsinit = 0.0
+  ! Find the first value where DOMA starts to rise - to account for
   ! wall effects
   DO i = 1,d_maxbin ! threshold at 0.02
-     IF(densarray(i,interfsei_col) > 0.02) THEN
-        domwidth_sei = interf(1) - densarray(i,0)
+     IF(densarray(i,interfdomA_col) > 0.02) THEN
+        domwidth_domA = interpos(1) - densarray(i,0)
         EXIT
      END IF
   END DO
 
-  ! Since bulk is asymmetric, need a separate width for bulk
+  ! Since domB is asymmetric, need a separate width for domB
   DO i = d_maxbin-1,1,-1
-     IF(densarray(i,interfbulk_col) > 0.02) THEN
-        domwidth_bulk = densarray(i,interfbulk_col) - interf(1)
+     IF(densarray(i,interfdomB_col) > 0.02) THEN
+        domwidth_domB = densarray(i,interfdomB_col) - interpos(1)
      END IF
   END DO
 
-  segeps_sei   = segper*domwidth_sei
-  segeps_bulk  = segper*domwith_bulk
+  segeps_domA   = segper*domwidth_domA
+  segeps_domB  = segper*domwith_domB
   
   IF(tval == 1) THEN
-     WRITE(logout,*) "SEI domain width is ", domwidth_sei
-     WRITE(logout,*) "SEI segmental width is ", segeps_sei
-     WRITE(logout,*) "Bulk domain width is ", domwidth_bulk
-     WRITE(logout,*) "Bulk segmental width is ", segeps_bulk
+     WRITE(logout,*) "DomA domain width is ", domwidth_domA
+     WRITE(logout,*) "DomA segmental width is ", segeps_domA
+     WRITE(logout,*) "DomB domain width is ", domwidth_domB
+     WRITE(logout,*) "DomB segmental width is ", segeps_domB
   END IF
 
+  IF(tval == 1) THEN
+     WRITE(logout,*) "Increment in DomA divisions: ", epsinc*segeps_domA
+     WRITE(logout,*) "Width for each DomA segment: ", epspre*epsinc&
+          &*segeps_domA
+     WRITE(logout,*) "Increment in DomB divisions: ", epsinc&
+          &*segeps_domB
+     WRITE(logout,*) "Width for each DomB segment: ", epspre*epsinc&
+          &*segeps_domB
+  END IF
   
-  ALLOCATE (dum_seg(ntotatoms), stat = AllocateStatus)
-  IF(AllocateStatus /=0 ) STOP "*** Allocation dum_seg not proper ***"
+  ALLOCATE (dum_aid(ntotatoms), stat = AllocateStatus)
+  IF(AllocateStatus /=0 ) STOP "*** Allocation dum_aid not proper ***"
   ALLOCATE (dum_typ(ntotatoms), stat = AllocateStatus)
   IF(AllocateStatus /=0 ) STOP "*** Allocation dum_typ not proper ***"
-  
-  IF(tval == 1) THEN
-     WRITE(logout,*) "Increment in SEI divisions: ", epsinc*segeps_sei
-     WRITE(logout,*) "Width for each SEI segment: ", epspre*epsinc&
-          &*segeps_sei
 
-     WRITE(logout,*) "Increment in bulk divisions: ", epsinc&
-          &*segeps_bulk
-     WRITE(logout,*) "Width for each SEI segment: ", epspre*epsinc&
-          &*segeps_bulk
+  DO p = 1,nmax_layers
 
+     dum_aid = -1 !initialize everything to -1
+     dum_typ = -1 !initialize everything to -1
+     seg_typcnt = 0 !initialize all counts to 0     
+     eps1 = epsinit !takes monomers between eps1*segeps and eps2*segeps
+     eps2 = eps1 + epspre*epsinc !prefactor is a fraction of epsinc
      
-  END IF
-
-  dum_seg = -1 !initialize everything to -1
-  dum_typ = -1 !initialize everything to -1
-     
-  eps1 = epsinit !takes monomers between eps1*segeps and eps2*segeps
-  eps2 = eps1 + epspre*REAL(epsinc) !prefactor is a fraction of epsinc
-
-  ! Calculate upto 0.7 of domain to account for wall effects
-  IF(eps2*segeps_sei > 0.7*domwidth_sei) THEN 
+     ! Calculate upto 0.7 of domain to account for wall effects
+     IF(eps2*segeps_domA > 0.7*domwidth_domA) THEN 
         
-     WRITE(logout,*) "Domain between ", eps1*segeps_sei, "and", eps2&
-          &*segeps_sei, "is greater than 70% of domain size"
-     WRITE(logout,*) "Domain more than 70% of SEI domain size"
-     PRINT*,  "Domain width more than 70% of domain size at", tval
-     STOP
-     
-  END IF
-
-    ! Calculate upto 0.7 of domain to account for wall effects
-  IF(eps2*segeps_sei > 0.7*domwidth_sei) THEN 
+        WRITE(logout,*) "Domain between ", eps1*segeps_domA, "and",&
+             & eps2*segeps_domA, "is greater than 70% of domain size"
+        WRITE(logout,*) "Domain more than 70% of DOMA domain size"
+        PRINT*,  "Domain width more than 70% of domain size at", tval
+        STOP
         
-     WRITE(logout,*) "Domain between ", eps1*segeps_sei, "and", eps2&
-          &*segeps_sei, "is greater than SEI half domain size"
-     WRITE(logout,*) "Domain more than SEI half domain size"
-     PRINT*,  "Domain width more than half domain size at", tval
-     STOP
-     
-  END IF
-
-  IF(tval == 1) THEN
-     WRITE(epsnum,'(I3)') int(epsinit)
-     dum_fname  = 'segcoords.'//trim(adjustl(fwnum))&
-          &//"_"//trim(adjustl(epsnum))//".txt"
-     
-     OPEN(unit = 14,file = dum_fname, status="replace", action &
-          &="write")
-     
      END IF
-
-     c1 = 0;c2 = 0;c3 = 0
-     k = 0
-     IF(tval == 1) print *, boxval
-     DO i = 1, ntotion_centers+n_o_mons
-
-        a1id = sortedarray(i,1)
-!        IF(i .LE. ntotion_centers) a1id = allionids(i)
-!        IF(i .GT. ntotion_centers) a1id = otypearr(i-ntotion_centers)
+     
+     ! Calculate upto 0.7 of domain to account for wall effects
+     IF(eps2*segeps_domB > 0.7*domwidth_domB) THEN 
         
+        WRITE(logout,*) "Domain between ", eps1*segeps_domB, "and",&
+             & eps2*segeps_domB, "is greater than domB half domain siz&
+             &e"
+        WRITE(logout,*) "Domain more than domB half domain size"
+        PRINT*,  "Domain width more than half domain size at", tval
+        STOP
+        
+     END IF
+     
+     IF(tval == 1) THEN
+        WRITE(epsnum,'(I3)') int(epsinit)
+        dum_fname  = 'segcoords.'//trim(adjustl(fwnum))&
+             &//"_"//trim(adjustl(epsnum))//".txt"
+        
+        OPEN(unit = 14,file = dum_fname, status="replace", action &
+             &="write")
+        
+     END IF
+     ! For both domB and DOMA check both sides of the select boundary
+     ! None of the segment boundary can be outside the box for 
+     ! p p f boundary conditions in LAMMPS. So issue an error
+     
+     IF((interpos(1) + eps1*segeps_domB) > boxval .OR. (interpos(1) +&
+          & eps2*segeps_domB) > boxval .OR. (interpos(1) - eps1&
+          &*segeps_domB) < 0.0 .OR. (interpos(1) - eps2*segeps_domB) <&
+          & 0.0) THEN
+        
+        PRINT *, "Selected boundary exceeds box limits..."
+        PRINT *, interpos(1), eps1*segeps_domB, eps2*segeps_domB, boxval
+        EXIT
+        
+        
+     ELSEIF((interpos(1) + eps1*segeps_domA) > boxval .OR.&
+          & (interpos(1) + eps2*segeps_domA) > boxval .OR.&
+          & (interpos(1) - eps1*segeps_domA) < 0.0 .OR. (interpos(1) &
+          &-eps2*segeps_domA) < 0.0) THEN
+        
+        PRINT *, "Selected boundary exceeds box limits..."
+        PRINT *, interpos(1), eps1*segeps_domA, eps2*segeps_domA, boxval
+        STOP 
+        
+     END IF
+     
+     ! Define boundaries for the sublayer   
+     interin_domB  = interpos(j) + eps1*segeps_domB
+     interout_domB = interpos(j) + eps2*segeps_domB
+     
+     interin_domA  = interpos(j) - eps1*segeps_domA
+     interout_domA = interpos(j) - eps2*segeps_domA
+     
+     !Initialize variables
+     k = 0
+     
+     IF(tval == 1) print *, boxval
+
+     !Loop through all atoms to decide the atoms in the sublayer
+     DO i = 1, ntotatoms
+        
+        a1id = aidvals(i,1)
+        IF(.NOT. ANY(all_layergrp_typarr(a1id,:) == 1)) THEN
+           CYCLE
+        END IF
+
         IF(major_axis == 1) THEN
            par_pos = trx_lmp(a1id,tval) - boxval*floor(trx_lmp(a1id&
                 &,tval)/boxval)
@@ -1874,274 +2109,168 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES(tval)
            par_pos = trz_lmp(a1id,tval) - boxval*floor(trz_lmp(a1id&
                 &,tval)/boxval)
         END IF
-
-        j = 1
-        flagbin = 0
-!Both interfaces are considered that is to the left and the right.
-!Can use ANINT conditions like for PBC?? Need to check.
-!Changing order of DO loops can result in efficiency, but memory to
-!store arrays for each interface has to be created 
-       DO WHILE(j <= maxinter)
-         
-          !To right of interface
-          IF((inter(j) + eps1*segeps) > boxval) THEN
-             !if inner interface is outside box, outer interface will
-             !also be. Flag will not change as this is equivalent to
-             !all the particles and interfaces inside a "new" box
-             !with the interface location at the other end of the box.
-             interin  = inter(j) + eps1*segeps - boxval 
-             interout = inter(j) + eps2*segeps - boxval
-             flagz    = 0 !Keep old flag
-             
-          ELSE IF((inter(j) + eps2*segeps) > boxval) THEN
-             !If inner interface is inside box and outer interface is
-             !outside box. Only in this case, one needs to
-             !redefine the conditions for selecting a particle.
-             interin  = inter(j) + eps1*segeps
-             interout = inter(j) + eps2*segeps - boxval
-             flagz    = 1 !Update flag
-             
-          ELSE
-             !Other normal conditions
-             interin  = inter(j) + eps1*segeps
-             interout = inter(j) + eps2*segeps
-             flagz    = 0 !Keep old flag
-             
-          END IF
-          
-          !To left of interface
-          
-          IF((inter(j) - eps1*segeps) < 0.0) THEN
-             !if inner interface is outside box, outer interface will
-             !also be. Flag will not change as this is equivalent to
-             !all the particles and interfaces inside a "new" box
-             !with the interface location at the other end of the box.
-             interin2  = inter(j) - eps1*segeps + boxval 
-             interout2 = inter(j) - eps2*segeps + boxval
-             flagz2    = 0 !Keep old flag
-             
-          ELSE IF((inter(j) - eps2*segeps) < 0.0) THEN
-             !If inner interface is inside box and outer interface is
-             !outside box. Only in this case, one needs to
-             !redefine the conditions for selecting a particle.
-             interin2  = inter(j) - eps1*segeps
-             interout2 = inter(j) - eps2*segeps + boxval
-             flagz2    = 1 !Update flag
-             
-          ELSE
-             !Other normal conditions
-             interin2  = inter(j) - eps1*segeps
-             interout2 = inter(j) - eps2*segeps
-             flagz2    = 0 !Keep old flag
-              
-          END IF
-          
-          !Right of interface      
-          IF(flagz == 0) THEN !Conditions 1 and 3 above
-             
-             IF(par_pos .GE. interin .AND. par_pos .LT. interout)&
-                  & THEN
-              
-                IF(aidvals(a1id,3) == 10) THEN 
-
-                   c1 = c1 + 1
-                   
-                ELSEIF(aidvals(a1id,3) == 11) THEN
-
-                   c2 = c2 + 1
-
-                ELSEIF(aidvals(a1id,3) == 9) THEN
-                   
-                   c3 = c3 + 1
-                   
-                END IF
-                
-                flagbin = flagbin + 1
-                k = k + 1
-                dum_seg(k) = a1id
-                dum_typ(k) = aidvals(a1id,3)
-                j = maxinter
-                IF(tval == 1) WRITE(14,'(2(I0,1X),3(F14.8,1X))') i,&
-                     & aidvals(a1id,3),trx_lmp(a1id,tval)&
-                     &,try_lmp(a1id,tval),trz_lmp(a1id,tval)
-                
-             END IF
-
-          ELSEIF(flagz == 1) THEN!Condition 2 in the previous IF-ELSE LOOP
-             !Change conditions for inner interface inside and outer
-             !interface outside the box. AND changes to OR
-             
-             !Right of interface
-             IF(par_pos .GE. interin .OR. par_pos .LT. interout) THEN
-                
-                IF(aidvals(a1id,3) == 10) THEN 
-                   
-                   c1 = c1 + 1
-                   
-                ELSEIF(aidvals(a1id,3) == 11) THEN
-
-                   c2 = c2 + 1
-
-                ELSEIF(aidvals(a1id,3) == 9) THEN
-
-                   c3 = c3 + 1
-                   
-                END IF
-                
-                k = k + 1
-                dum_seg(k) = a1id
-                dum_typ(k) = aidvals(a1id,3)
-                j = maxinter
-                flagbin = flagbin + 1
-                IF(tval == 1) WRITE(14,'(2(I0,1X),3(F14.8,1X))') i,&
-                     & aidvals(a1id,3),trx_lmp(a1id,tval)&
-                     &,try_lmp(a1id,tval),trz_lmp(a1id,tval)
-                
-             END IF
-             
-          END IF
-          
-          !Left of interface. Interfacial conditions remain identical
-          IF(flagz2 == 0) THEN
-             
-             IF(par_pos .GE. interout2 .AND. par_pos .LT. interin2)&
-                  & THEN
-                
-                IF(aidvals(a1id,3) == 10) THEN 
-                   c1 = c1 + 1
-                    
-                ELSEIF(aidvals(a1id,3) == 11) THEN 
-
-                   c2 = c2 + 1
-
-                ELSEIF(aidvals(a1id,3) == 9) THEN
-
-                   c3 = c3 + 1
-
-                END IF
-                
-                k = k + 1
-                dum_seg(k) = a1id
-                dum_typ(k) = aidvals(a1id,3)
-                j = maxinter
-                flagbin = flagbin + 1
-
-                IF(tval == 1) WRITE(14,'(2(I0,1X),3(F14.8,1X))') i,&
-                     & aidvals(a1id,3),trx_lmp(a1id,tval)&
-                     &,try_lmp(a1id,tval),trz_lmp(a1id,tval)
-
-                
-             END IF
-             
-          ELSEIF(flagz2 == 1) THEN
-             
-             IF(par_pos .GE. interout2 .OR. par_pos .LT. interin2)&
-                  & THEN
-                
-                IF(aidvals(a1id,3) == 10) THEN 
-                   
-                   c1 = c1 + 1
-
-                ELSEIF(aidvals(a1id,3) == 11) THEN 
-
-                   c2 = c2 + 1
-
-                ELSEIF(aidvals(a1id,3) == 9) THEN
-
-                   c3 = c3 + 1
-
-                END IF
-                
-                k = k + 1
-                dum_seg(k) = a1id
-                dum_typ(k) = aidvals(a1id,3)
-                j = maxinter
-                flagbin = flagbin + 1
-                IF(tval == 1) WRITE(14,'(2(I0,1X),3(F14.8,1X))') i,&
-                     & aidvals(a1id,3),trx_lmp(a1id,tval)&
-                     &,try_lmp(a1id,tval),trz_lmp(a1id,tval)
-
-             END IF
-             
-          END IF
-          
-          j = j + 1
-
-          IF(flagbin > 1) THEN
-             
-             WRITE(logout,*) "Particle binned twice"
-             WRITE(logout,*) interin, interout, interin2, interout2
-             WRITE(logout,'(I0,1X,I0,1X,3F14.8)') i, aidvals(a1id,3),&
-                  & trx_lmp(a1id,tval),try_lmp(a1id,tval)&
-                  &,trz_lmp(a1id,tval)
-             STOP
-             
-          END IF
-          
-       END DO
-       
-    END DO
-    
-    IF(tval == 1)WRITE(logout,*) "Width considered is ", (eps2-eps1)&
-         &*segeps
-    
-    IF(tval == 1) PRINT *,"The number of mon for ",eps1*segeps,"< z &
-         &<",eps2*segeps,"is :", k, "with ", c1, "type Li", c2, "type &
-         &P and ", c3, "type O at tval: ",tval
-    IF(tval == 1) THEN
-       WRITE(logout,*),"The number of mon for ",eps1*segeps, "< z <",&
-            & eps2*segeps,"is:",k,"with ", c1, "type Li", c2, "type P&
-            & and ", c3, "type O at tval: ",tval
-    END IF
-    
-    
-    num_mons = k
-    
-    ALLOCATE (seg_act(num_mons), stat = AllocateStatus)
-    IF(AllocateStatus /=0 ) STOP "*** Allocation seg_act not proper ***"
-    
-    ALLOCATE (seg_typ(num_mons), stat = AllocateStatus)
-    IF(AllocateStatus /=0 ) STOP "*** Allocation seg_typ not proper ***"
-    
-    DO i = 1,num_mons
-       
-       IF(dum_seg(i) == -1 .OR. dum_typ(i) == -1) THEN
-          
-          PRINT *, "dummy arrays for seg_mons updated incorrectly"
-          
-          STOP
-          
-       END IF
-       
-       seg_act(i) = dum_seg(i)
-       seg_typ(i) = dum_typ(i)
         
-    END DO
+        flagbin = 0
+                
+        IF(par_pos .GE. interin .AND. par_pos .LT. interout)&
+             & THEN
+           
+           flagbin = flagbin + 1
+           k = k + 1
+           dum_aid(k) = a1id
+           dum_typ(k) = aidvals(a1id,3)
+           dum_typcnt(aidvals(a1id,3)) = dum_typcnt(aidvals(a1id,3)+1
+           j = maxinterf
+           
+           IF(tval == 1) WRITE(14,'(2(I0,1X),3(F14.8,1X))') i,&
+                & aidvals(a1id,3),trx_lmp(a1id,tval)&
+                &,try_lmp(a1id,tval),trz_lmp(a1id,tval)
+           
+        END IF
+     
+     END DO
+  
+     IF(tval == 1) THEN
+        WRITE(logout,*) "Width considered is ", (eps2-eps1)*segeps
+        WRITE(logout,*) "Population of each type"
+        DO i = 1,num_groups
+           WRITE(logout,*) i,seg_typcnt(i)
+        END DO
+     END IF
+          
+     num_mons = k
+    
+     ALLOCATE (seg_aid(num_mons_per_layer), stat = AllocateStatus)
+     IF(AllocateStatus /=0 ) STOP "*** Allocation seg_aid not proper ***"
+     
+     ALLOCATE (seg_typ(num_mons_per_layer), stat = AllocateStatus)
+     IF(AllocateStatus /=0 ) STOP "*** Allocation seg_typ not proper ***"
 
-    CALL LAMPLANE_ANALYSIS(tval,c1,c2,c3,p,(eps2-eps1)*segeps)
-    
-    DEALLOCATE(seg_act)
-    DEALLOCATE(seg_typ)
-    
-    epsinit = epsinit + epsinc
-    
- END DO
- 
- 
- pfin = p - 1
- IF(tval == 1) PRINT *, "Total number of divisions: ", pfin
- IF(pmax .LT. pfin) PRINT *, "Warning: Not all divisions are accounted&
-      & for: pmax/pfin", pmax, pfin
- DEALLOCATE(dum_seg)
- DEALLOCATE(dum_typ)
- DEALLOCATE(seg_dtype)
- 
- WRITE(logout,*) "Segmental diffusion analysis complete .. "
- WRITE(logout,*) "Segmental mode relaxation analysis complete .. "
- 
+     IF(SUM(dum_typcnt) .NE. num_mons_per_layer) THEN
+        PRINT *, "Total number of atoms in a layer does not match..."
+        PRINT *, num_mons_per_layer
+        DO i = 1,num_groups
+           WRITE(logout,*) i,seg_typcnt(i)
+        END DO
+     END IF
+     
+     DO i = 1,num_mons_per_layer
+        
+        IF(dum_aid(i) == -1 .OR. dum_typ(i) == -1) THEN
+           
+           PRINT *, "dummy arrays for seg_mons updated incorrectly"
+           
+           STOP
+           
+        END IF
+        
+        seg_aid(i) = dum_aid(i)
+        seg_typ(i) = dum_typ(i)
+        
+     END DO
+     
+     CALL LAMPLANE_ANALYSIS(tval,num_mons_per_layer,p,(eps2-eps1)&
+          &*segeps)
+     
+     DEALLOCATE(seg_aid)
+     DEALLOCATE(seg_typ)
+     
+     epsinit = epsinit + epsinc
+     
+  END DO
+  
+  IF(tval == 1) PRINT *, "Total number of sub-layers: ", p-1
+  IF(p-1 .NE. nmax_layers) PRINT *, "Warning: nmax_layers exceed avail&
+       &able sub-layers", nmax_layers, p-1
+  DEALLOCATE(dum_aid)
+  DEALLOCATE(dum_typ)
+  DEALLOCATE(seg_dtype)
+  
+  WRITE(logout,*) "Segmental diffusion analysis complete..."
+  WRITE(logout,*) "Segmental mode relaxation analysis complete..."
+  
 END SUBROUTINE COMPARTMENTALIZE_PARTICLES
 
 !--------------------------------------------------------------------
+SUBROUTINE ASSIGN_DOMAIN_ID(tval)
+
+  USE STATICPARAMS
+  IMPLICIT NONE
+
+  REAL :: par_pos
+  INTEGER :: flagdom, domnum,i,j
+  INTEGER, INTENT(IN) :: tval
+
+  seg_dtype = 0
+  IF(tval == 1) THEN
+     dum_fname  = 'domdist.'//trim(adjustl(fwnum))//".txt"
+     OPEN(unit = 18,file = dum_fname, status="replace", action = "writ&
+          &e")
+  END IF
+
+!$OMP PARALLEL DO PRIVATE(i,par_pos,flagdom,domnum)
+  DO i = 1, ntotatoms
+     
+     IF(major_axis == 1) THEN
+        par_pos = trx_lmp(i,tval) - boxval*floor(trx_lmp(i,tval)&
+             &/boxval)
+     ELSE IF(major_axis == 2) THEN 
+        par_pos = try_lmp(i,tval) - boxval*floor(try_lmp(i,tval)&
+             &/boxval)
+     ELSE
+        par_pos = trz_lmp(i,tval) - boxval*floor(trz_lmp(i,tval)&
+             &/boxval)
+     END IF
+
+     flagdom = 0
+     domnum  = 0
+
+     IF(par_pos .GE. 0.0 .AND. par_pos .LT. interpos(1)) THEN
+        
+        flagdom = 1
+        domnum  = domtyp(1)
+        
+     ELSEIF(par_pos .GE. interpos(1) .AND. par_pos .LE. boxval) THEN
+        
+        flagdom = 1
+        domnum  = domtyp(2)
+
+     END IF
+
+     IF(flagdom == 0 .OR. domnum == 0 .OR. domnum > maxinter) THEN
+        
+        PRINT *, "Particle Coordinate not assigned domain properly"
+        PRINT *, "i,Coordinate,domnum,tval", i,par_pos,domnum,tval
+        
+        WRITE(logout,*),"Particle Coordinate not assinged domain properl&
+             &y"
+        WRITE(logout,*), "i,Coordinate,domnum,time", i,par_pos,domnum&
+             &,tval
+     
+        STOP
+        
+     ELSE
+        
+        seg_dtype(i) = domnum
+        
+     END IF
+     
+  END DO
+!$OMP END PARALLEL DO
+
+  IF(tval == 1) THEN
+     DO i = 1,ntotatoms
+        WRITE(18,'(2(I0,1X),3(F14.8,1X))') i, seg_dtype(i)&
+             &,trx_lmp(i,tval), try_lmp(i,tval), trz_lmp(i,tval)
+        
+     END DO
+
+     CLOSE(18)
+  END IF
+END SUBROUTINE ASSIGN_DOMAIN_ID
+
+!--------------------------------------------------------------------
+
 SUBROUTINE SORT_WRT_DOM(tval)
 
   USE STATICPARAMS
