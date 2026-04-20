@@ -36,24 +36,13 @@ improper_style  none
 
 # Electrostatic Information
 kspace_style	pppm 0.00001
-kspace_modify   slab 3.0
 dielectric	1
 
 # Define Groups
-group li_surface type 1
-group not_surface subtract all li_surface
-group sei_peo type 2:4
-group vec_mtfsi type 9:22
-group polymer union sei_peo vec_mtfsi
-group coi_ions type 6:8
-group li_ions type 5
-
-# Define mobile groups (except bottom two)
-group mobile subtract all li_bottom
+group all type 2:4
 
 # Define initial velocities
-velocity li_surface set 0.0 0.0 0.0
-velocity not_surface create 100.0 430483 dist gaussian mom yes
+velocity all create 100.0 430483 dist gaussian mom yes
 
 ###############################################################
 # Initial Dynamics (nve/limit at 300K). Freeze all surface atoms
@@ -61,14 +50,14 @@ velocity not_surface create 100.0 430483 dist gaussian mom yes
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-velocity 	mobile create 300 123123 mom yes
+velocity 	all create 300 123123 mom yes
 thermo_style	custom step temp pe
 thermo          1000
 dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
 
 # Main Fixes
-fix  thermostat not_surface langevin 100.0 300.0 1000.0 48279 zero yes # don't thermostat initially
-fix  integrate not_surface nve/limit 0.005
+fix  thermostat all langevin 100.0 300.0 1000.0 48279 zero yes # don't thermostat initially
+fix  integrate all nve/limit 0.005
 
 # Run Styles
 run_style verlet
