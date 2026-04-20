@@ -34,7 +34,6 @@ improper_style  none
 
 # Electrostatic Information
 kspace_style    pppm 0.00001
-kspace_modify   slab 3.0
 dielectric      1
 
 
