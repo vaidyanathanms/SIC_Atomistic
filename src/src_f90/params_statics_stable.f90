@@ -1,5 +1,5 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 2: Apr-24-2026-------------------------------
+!---------------Version 2: Apr-27-2026-------------------------------
 !---------------Main File: analyze_statics.f90-----------------------
 !********************************************************************
 
@@ -82,7 +82,7 @@ MODULE STATICPARAMS
        &,ntotimprtypes
 
   !Lammps trajectory file read details
-  REAL :: box_xl,box_yl,box_zl, boxval
+  REAL :: box_xl,box_yl,box_zl
   INTEGER*8 :: timestep
 
   !Required Arrays - LAMMPS
