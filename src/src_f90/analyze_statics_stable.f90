@@ -1,10 +1,11 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 2: Apr-24-2026-------------------------------
+!---------------Version 2: Apr-27-2026-------------------------------
 !---------------Parameter File: params_statics.f90-------------------
 !********************************************************************
 
 PROGRAM ANALYSIS_MAIN
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -40,6 +41,7 @@ END PROGRAM ANALYSIS_MAIN
 
 SUBROUTINE READ_ANA_IP_FILE()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -375,6 +377,7 @@ END SUBROUTINE READ_ANA_IP_FILE
 
 SUBROUTINE READ_NEXT_KEYWORD(iu, keyword, ierr)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
   
@@ -428,6 +431,7 @@ END SUBROUTINE READ_NEXT_KEYWORD
 
 SUBROUTINE DEFAULTVALUES()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -472,7 +476,7 @@ SUBROUTINE DEFAULTVALUES()
   
   ! Initialize structural averages
   rvolavg = 0; rgavg = 0; dbinavg = 0.0; ddenavg = 0.0
-  major_boxval = 0.0
+  major_boxval = 0.0; boxlzavg = 0.0
 
   ! Initialize layer-wise structural averages
   rdf2dvolavg = 0.0; rdf2dfreq = 1; rdf2dmaxbin = 50
@@ -487,8 +491,8 @@ END SUBROUTINE DEFAULTVALUES
 
 SUBROUTINE READ_DATAFILE()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
-
   IMPLICIT NONE
 
   INTEGER :: i,j,ierr,u,AllocateStatus,imax
@@ -689,8 +693,8 @@ END SUBROUTINE READ_DATAFILE
 
 SUBROUTINE COMPUTE_INIT_NLINES(imax)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
-
   IMPLICIT NONE
 
   INTEGER, INTENT(OUT) :: imax
@@ -893,6 +897,7 @@ END SUBROUTINE COUNT_ATOMS_WITH_TYPE_I
 
 SUBROUTINE ANALYZE_TRAJECTORYFILE()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -1029,6 +1034,7 @@ END SUBROUTINE ANALYZE_TRAJECTORYFILE
 
 SUBROUTINE STRUCT_INIT()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -1066,6 +1072,7 @@ END SUBROUTINE STRUCT_INIT
 
 SUBROUTINE STRUCT_MAIN(tval)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -1162,6 +1169,7 @@ END SUBROUTINE STRUCT_MAIN
 
 SUBROUTINE COMPUTE_DENSPROFILES(tval)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -1176,7 +1184,7 @@ SUBROUTINE COMPUTE_DENSPROFILES(tval)
   dbinavg  = dbinavg + dbinval
   ddenval  = major_boxval/(box_xl*box_yl*box_zl*dbinval)
   ddenavg  = ddenavg + ddenval
-  boxlzavg = boxlzavg + boxval
+  boxlzavg = boxlzavg + major_boxval
 
   IF(tval == 1) THEN
      
@@ -1691,6 +1699,7 @@ END SUBROUTINE CAT_AN_NEIGHS
 !--------------------------------------------------------------------
 SUBROUTINE LAYERWISE_MAIN()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -1748,8 +1757,8 @@ END SUBROUTINE LAYERWISE_MAIN
   
 SUBROUTINE COMPUTE_INTERFACES()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
-
   IMPLICIT NONE
 
 !!$ To calculate the interface positions
@@ -1924,7 +1933,7 @@ SUBROUTINE INITIAL_DOMAIN_CLASSIFICATION(tval)
   IMPLICIT NONE
 
   INTEGER :: i, flagdom, AllocateStatus
-  REAL :: par_pos
+  REAL :: par_pos, boxval
   INTEGER, DIMENSION(1:maxinterf+1) :: domAdum, domBdum
   INTEGER, INTENT(IN) :: tval
 
@@ -2055,8 +2064,8 @@ END SUBROUTINE INITIAL_DOMAIN_CLASSIFICATION
 
 SUBROUTINE COMPARTMENTALIZE_PARTICLES_INTERFACE(tval)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
-
   IMPLICIT NONE
 
   INTEGER :: i,j,k,p,AllocateStatus,flagbin,a1id
@@ -2065,13 +2074,18 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES_INTERFACE(tval)
   REAL    :: interin_domA, interout_domA,domwidth_domA
   REAL    :: interin_domB, interout_domB,domwidth_domB
   REAL    :: segwid_domA, segwid_domB, segwid
+  REAL    :: boxval
   INTEGER :: interfdomA_col, interfdomB_col
   CHARACTER(LEN=3) :: epsnum
   INTEGER, INTENT(IN) :: tval
   INTEGER, ALLOCATABLE, DIMENSION(:)::dum_aid, dum_typ 
 
-  !Nomenclature: Dom-A (Dom-B): left (right) of interface
-  
+  ! Find boxval
+  IF(major_axis == 1) boxval = box_arr(tval,1)
+  IF(major_axis == 2) boxval = box_arr(tval,2)
+  IF(major_axis == 3) boxval = box_arr(tval,3)
+
+  !Nomenclature: Dom-A (Dom-B): left (right) of interface 
   IF(tval == 1) THEN
      ALLOCATE(seg_typcnt(1:ntotatomtypes),stat=AllocateStatus)
      IF(AllocateStatus/=0) STOP "did not allocate seg_typcnt"
@@ -2079,7 +2093,6 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES_INTERFACE(tval)
 
   CALL MAP_GROUP_TO_COL(interfgrp_a,interfdomA_col)
   CALL MAP_GROUP_TO_COL(interfgrp_b,interfdomB_col)
-
   
   domcheck = 0.0; epsinit = 0.0
   ! Find the first value where DOMA starts to rise - to account for
@@ -2326,16 +2339,22 @@ END SUBROUTINE COMPARTMENTALIZE_PARTICLES_INTERFACE
 
 SUBROUTINE COMPARTMENTALIZE_PARTICLES_BOTTOMSURF(tval)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
 
   INTEGER :: i,k,p,AllocateStatus,flagbin,a1id
   REAL    :: par_pos, layer_deltaz, delz_1, delz_2
-  REAL    :: zinner, zouter
+  REAL    :: zinner, zouter, boxval
   INTEGER, INTENT(IN) :: tval
   INTEGER, ALLOCATABLE, DIMENSION(:)::dum_aid, dum_typ 
 
+  ! Find boxval
+  IF(major_axis == 1) boxval = box_arr(tval,1)
+  IF(major_axis == 2) boxval = box_arr(tval,2)
+  IF(major_axis == 3) boxval = box_arr(tval,3)
+  
   ! delz = (zi-zmin)/n - (n-1)delta_l/n
   IF(tval == 1) THEN
      ALLOCATE(seg_typcnt(1:ntotatomtypes),stat=AllocateStatus)
@@ -2512,9 +2531,15 @@ SUBROUTINE ASSIGN_DOMAINID(tval)
   IMPLICIT NONE
 
   REAL :: par_pos
-  INTEGER :: i, flagdom, domnum
+  INTEGER :: i, flagdom, domnum, boxval
   INTEGER, INTENT(IN) :: tval
 
+  ! Find boxval
+  IF(major_axis == 1) boxval = box_arr(tval,1)
+  IF(major_axis == 2) boxval = box_arr(tval,2)
+  IF(major_axis == 3) boxval = box_arr(tval,3)
+
+  ! Zero domain types
   seg_dtype = 0
   IF(tval == 1) THEN
      dum_fname  = 'domdist_'//trim(adjustl(traj_fname))
@@ -2588,6 +2613,7 @@ END SUBROUTINE ASSIGN_DOMAINID
 
 SUBROUTINE LAYERWISE_ANALYSIS(tval,ipos,num_mons,segwidth)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -2845,6 +2871,7 @@ END SUBROUTINE OPEN_STRUCT_OUTPUT_FILES
 
 SUBROUTINE ALLOUTPUTS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -3008,7 +3035,7 @@ SUBROUTINE OUTPUT_LAYERRDF()
         zout_wrt_interf = zin_wrt_interf + 2*rdf2dbinavg*rdf2dmaxbin
            
         WRITE(dumwrite,'(F12.6,2X,A7,2X,F12.6)') zin, " < z < ", zout
-        WRITE(dumwrite,'(F12.6,2X,A12,2X,F12.6)') zin_wrt_interf, " < &
+        WRITE(dumwrite,'(F12.6,2X,A14,2X,F12.6)') zin_wrt_interf, " < &
              & |z-z_i| < ", zout_wrt_interf
         
         
@@ -3201,6 +3228,7 @@ END SUBROUTINE ALLOCATE_TOPO_ARRAYS
 
 SUBROUTINE ALLOCATE_ANALYSIS_ARRAYS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -3300,6 +3328,7 @@ END SUBROUTINE ALLOCATE_ANALYSIS_ARRAYS
 
 SUBROUTINE DEALLOCATE_ARRAYS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
