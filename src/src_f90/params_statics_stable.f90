@@ -24,7 +24,8 @@ MODULE STATICPARAMS
 
   !All layerwise analysis flags - structure
   INTEGER :: grpflag, densflag,rdfflag,interfflag
-  INTEGER :: layerana_flag, layer_grpflag
+  INTEGER :: layerana_flag
+  INTEGER :: layer_grpflag_interf, layer_grpflag_surf
   INTEGER :: layrdf_flag
   INTEGER :: rdf2dflag
 
@@ -37,7 +38,7 @@ MODULE STATICPARAMS
   !Variables required for computing bulk static properties
   INTEGER :: rdffreq,rmaxbin,npairs,d_maxbin,densfreq
   INTEGER :: rgfreq, rdfpaircnt
-  REAL    :: rvolavg,rdomcut,rbinval,rvolval
+  REAL    :: rvolavg,rdomcut,rbinval
   REAL    :: boxlzavg,ddenavg
   REAL    :: re2ave, re4ave, rg2ave, rg4ave, b2ave
   REAL    :: delta_t
@@ -49,12 +50,12 @@ MODULE STATICPARAMS
   REAL    :: dbinavg, major_boxval
   REAL    :: epspre, epsinit, segper, epsinc
   REAL    :: rdf2dvolavg,rdf2dbinavg
+  REAL    :: zmin, zmax, deltaz_btw_layers
   
   !Global group details
   INTEGER :: ngroups, ndens_grps
   INTEGER :: ioncnt,  iontype
   INTEGER :: c_ioncnt, c_iontype
-  INTEGER :: p_ioncnt, p_iontype
   INTEGER :: maxneighsize, neighfreq
   INTEGER :: ntotion_centers
 
@@ -66,7 +67,7 @@ MODULE STATICPARAMS
   !File names and unit numbers
   CHARACTER(LEN = 256) :: ana_fname,data_fname,traj_fname,log_fname
   CHARACTER(LEN = 256) :: rdf_fname, dum_fname
-  INTEGER, PARAMETER :: anaread = 2,   logout = 3
+  INTEGER, PARAMETER :: anaread = 21,   logout = 3
   INTEGER, PARAMETER :: dumwrite = 50
   INTEGER, PARAMETER :: inpread = 100, rgwrite = 200,rgavgwrite = 300
 
@@ -90,13 +91,12 @@ MODULE STATICPARAMS
   INTEGER, ALLOCATABLE, DIMENSION(:,:) :: bond_lmp, angl_lmp,&
        & dihd_lmp, impr_lmp,aidvals
   CHARACTER,ALLOCATABLE,DIMENSION(:,:) :: keywords
-  REAL,ALLOCATABLE,DIMENSION(:) :: boxx_arr, boxy_arr,boxz_arr
+  REAL,ALLOCATABLE,DIMENSION(:,:) :: box_arr
 
   !General required arrays required for computing properties
   INTEGER,ALLOCATABLE,DIMENSION(:)   :: types_in_group
-  INTEGER,ALLOCATABLE,DIMENSION(:,:) :: allgrp_typarr
+  INTEGER,ALLOCATABLE,DIMENSION(:,:) :: allgrp_typarr, allgrp_atomarr
   INTEGER,ALLOCATABLE,DIMENSION(:,:) :: ionarray,counterarray
-  INTEGER,ALLOCATABLE,DIMENSION(:,:) :: polyionarray
   INTEGER,ALLOCATABLE,DIMENSION(:,:) :: allionids
   REAL,ALLOCATABLE,DIMENSION(:) :: clust_avg
 
@@ -122,9 +122,6 @@ MODULE STATICPARAMS
   !Required Arrays - Dynamic Quantities
   INTEGER*8,ALLOCATABLE,DIMENSION(:) :: tarr_lmp
   REAL*8,ALLOCATABLE,DIMENSION(:,:) :: trx_lmp,try_lmp,trz_lmp
-  REAL*8,ALLOCATABLE,DIMENSION(:,:) :: itrx_lmp,itry_lmp,itrz_lmp
-  REAL*8,ALLOCATABLE,DIMENSION(:,:) :: ctrx_lmp,ctry_lmp,ctrz_lmp
-  REAL*8,ALLOCATABLE,DIMENSION(:,:) :: ptrx_lmp,ptry_lmp,ptrz_lmp
 
 END MODULE STATICPARAMS
 
