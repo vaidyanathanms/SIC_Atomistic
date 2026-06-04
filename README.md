@@ -11,7 +11,7 @@ NpT of bulk and crystal have not been done. Using the standard cutoff for now. T
 Methodology
 ------------
 1. Check how many lithium ions, CO_3^(2-) ions, VEC-MTFSI chains and the number of layers necessary.
-2. Get the charge data are obtained from Gaussian.
+2. Get the charge data are obtained from Gaussian in the Excel sheet.
 3. Use Materials studio to generate a single molecule of each type and export as mol2 file, car and mdf files
 4. Use src_tcl_inp/mol2topdb.tcl to convert to pdb files
 5. Use src_tcl_inp/change_atq_vecmtfsi.tcl to change the resnames/atomtypes and create datafiles
