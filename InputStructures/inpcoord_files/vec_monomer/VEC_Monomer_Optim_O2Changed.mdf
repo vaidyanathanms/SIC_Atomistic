@@ -1,0 +1,46 @@
+!BIOSYM molecular_data 4
+ 
+!Date: Tue Feb 10 19:18:58 2026   Materials Studio Generated MDF file
+ 
+#topology
+
+@column 1 element
+@column 2 atom_type
+@column 3 charge_group
+@column 4 isotope
+@column 5 formal_charge
+@column 6 charge
+@column 7 switching_atom
+@column 8 oop_flag
+@column 9 chirality_flag
+@column 10 occupancy
+@column 11 xray_temp_factor
+@column 12 connections
+ 
+@molecule Molecule
+ 
+C5H8_1:H1           H  x       ?     0  0     0.1465 0 0 8 1.0000  0.0000 C1 
+C5H8_1:C1           C  x       ?     0  0    -0.4570 0 0 8 1.0000  0.0000 C2 H2 H3 H1 
+C5H8_1:C2           C  x       ?     0  0    -0.2623 0 0 8 1.0000  0.0000 C1 C3 H4 H5 
+C5H8_1:H2           H  x       ?     0  0     0.1577 0 0 8 1.0000  0.0000 C1 
+C5H8_1:H3           H  x       ?     0  0     0.1705 0 0 8 1.0000  0.0000 C1 
+C5H8_1:C3           C  x       ?     0  0     0.0895 0 0 8 1.0000  0.0000 C2 O1 C4 H6 
+C5H8_1:H4           H  x       ?     0  0     0.1825 0 0 8 1.0000  0.0000 C2 
+C5H8_1:H5           H  x       ?     0  0     0.1745 0 0 8 1.0000  0.0000 C2 
+C5H8_1:O1           O  x       ?     0  0    -0.5336 0 0 8 1.0000  0.0000 C3 C5 
+C5H8_1:C4           C  x       ?     0  0     0.0016 0 0 8 1.0000  0.0000 C3 O2 H7 H8 
+C5H8_1:H6           H  x       ?     0  0     0.1524 0 0 8 1.0000  0.0000 C3 
+C5H8_1:C5           C  x       ?     0  0     0.8389 0 0 8 1.0000  0.0000 O1 O2 O3/2.0 
+C5H8_1:O2           O  x       ?     0  0    -0.5323 0 0 8 1.0000  0.0000 C4 C5 
+C5H8_1:H7           H  x       ?     0  0     0.1259 0 0 8 1.0000  0.0000 C4 
+C5H8_1:H8           H  x       ?     0  0     0.1358 0 0 8 1.0000  0.0000 C4 
+C5H8_1:O3           O  x       ?     0  0    -0.3908 0 0 8 1.0000  0.0000 C5/2.0 
+ 
+
+#atomset
+
+@list backbone Molecule
+
+Molecule:C5H8_1:H1 C1 C2 H4 
+
+#end
