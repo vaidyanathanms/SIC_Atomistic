@@ -4,7 +4,7 @@
 package require topotools
 
 # Set the input name without mol2 extension
-set molname ../MTFSI_Monomer/MTFSI_Monomer_O2Changed
+set molname ../../InputStructures/mtfsi_monomer/MTFSI_Monomer_O2Changed
 
 # Load the MOL2 file
 mol new ${molname}.mol2
