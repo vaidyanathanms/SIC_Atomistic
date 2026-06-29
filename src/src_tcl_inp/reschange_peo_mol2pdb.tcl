@@ -3,7 +3,7 @@
 package require topotools
 
 # Set the input name without mol2 extension
-set molname ../SEI_Polymer/60PEO
+set molname ../../InputStructures/peo_polymer/60PEO
 
 # Load the MOL2 file
 mol new ${molname}.mol2
