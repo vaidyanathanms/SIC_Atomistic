@@ -3,6 +3,10 @@
 # See All_Charges.xlsx for the details
 
 package require topotools
+# Inputs: add the file prefix
+set fname "../../InputStructures/inpcoord_files/peo_polymer/60PEO_Optimized_CH3terminated_editedterminal"
+set outname "${fname}_edited"
+
 
 # Main procedure to change so that I can avoid writing the set variable 3 times
 proc change_at_type_name_q {oldName newName newType {newCharge "0.0"} {newResname "BAD"} {scopeSel "all"} {molid top}} {
@@ -60,9 +64,6 @@ proc change_at_type_name_q {oldName newName newType {newCharge "0.0"} {newResnam
 }
 
 #-----------------------------------Main function--------------------------------------
-# Add the file prefix
-set fname "../SEI_PEO_Polymer/60PEO_CH3terminated/60PEO_Optimized_CH3terminated_editedterminal"
-set outname "${fname}_edited"
 
 puts "${fname}.car"
 # Load the car file
