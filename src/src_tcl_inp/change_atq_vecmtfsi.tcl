@@ -4,6 +4,11 @@
 
 package require topotools
 
+# Inputs: add the file prefix
+set fname "../../InputStructures/inpcoord_files/vecmtfsi_polymer/V27M5_150T" ; # without file ext
+set outname "../../InputStructures/combined/${fname}_edited"
+
+
 # Main procedure to change so that I can avoid writing the set variable 3 times
 proc change_at_type_name_q {oldName newName newType {newCharge "0.0"} {newResname "BAD"} {scopeSel "all"} {molid top}} {
     set seltext "1"
@@ -60,10 +65,6 @@ proc change_at_type_name_q {oldName newName newType {newCharge "0.0"} {newResnam
 }
 
 #-----------------------------------Main function--------------------------------------
-# Add the file prefix
-set fname "../../InputStructures/combined/V27M5_150T"
-set outname "${fname}_edited"
-
 puts "${fname}.car"
 # Load the car file
 mol new ${fname}.car type car

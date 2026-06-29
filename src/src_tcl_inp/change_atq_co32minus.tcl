@@ -2,7 +2,8 @@
 
 package require topotools
 
-set molname "../../InputStructures/inp_coordfiles/co3_2minus" ;# without the extension
+# Inputs: add the file prefix
+set molname "../../InputStructures/inpcoord_files/co32m_monomer/co3_2minus" ;# without the extension
 set outname "${molname}_edited"
 
 # Load the PDB file - Should have the necessary PDB files
