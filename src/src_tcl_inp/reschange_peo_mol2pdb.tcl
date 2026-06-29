@@ -26,11 +26,6 @@ set natoms [$sel num]
 set oxyethy [atomselect $molID "resname oxyethy"]
 $oxyethy set resname "EO"
 
-# Change identity of anion-group
-#set C8H11NO [atomselect $molID "resname C8H11NO"]
-#$C8H11NO set resname "ANI"
-
-
 # Change identity of terminal-group-1
 set methyl [atomselect $molID "resname methyl"]
 $methyl set resname "CTR"
