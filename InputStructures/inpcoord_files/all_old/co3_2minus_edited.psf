@@ -1,0 +1,36 @@
+PSF
+
+       1 !NTITLE
+ REMARKS VMD-generated NAMD/X-Plor PSF structure file
+
+       4 !NATOM
+       1      1    COI  O00  O1C        -1.20245        15.999       0
+       2      1    COI  C01  C1C         1.60734        12.011       0
+       3      1    COI  O02  O2C        -1.20245        15.999       0
+       4      1    COI  O03  O2C        -1.20245        15.999       0
+
+       3 !NBOND: bonds
+       1       2       2       3       2       4
+
+       3 !NTHETA: angles
+       1       2       3       1       2       4       3       2       4
+
+       0 !NPHI: dihedrals
+
+
+       0 !NIMPHI: impropers
+
+
+       0 !NDON: donors
+
+
+       0 !NACC: acceptors
+
+
+       0 !NNB
+
+       0       0       0       0
+
+       1       0 !NGRP
+       0       0       0
+
