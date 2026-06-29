@@ -1,3 +1,5 @@
+# Generic code to convert mol2 files of residues (monomers) to PDB/psf/datafiles
+# The same code is used to convert PEO and VEC-MTFSI by changing the types/resnames correctly
 # To convert mol2 to PDB/PSF
 
 package require topotools
