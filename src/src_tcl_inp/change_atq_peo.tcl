@@ -1,4 +1,4 @@
-# Change all necessary atomtypes/residues and charges
+# Change all necessary atomtypes/residues and charges of PEO atoms
 # Version: Feb-16-2026, VMS
 # See All_Charges.xlsx for the details
 
