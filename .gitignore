@@ -9,3 +9,4 @@ InputStructures/inpcoord_files/*extra*
 InputStructures/inpcoord_files/*.top
 Copolymer_SingleChain/*
 src/src_py/__pycache__/
+~/results
