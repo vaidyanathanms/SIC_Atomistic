@@ -13,8 +13,10 @@ Methodology
 1. Check how many lithium ions, CO_3^(2-) ions, VEC-MTFSI chains and the number of layers necessary.
 2. Get the charge data are obtained from Gaussian in the Excel sheet.
 3. Use Materials studio to generate a single molecule of each type and export as mol2 file, car and mdf files
-4. Use src_tcl_inp/mol2topdb.tcl to convert to pdb files
-5. Use src_tcl_inp/change_atq_vecmtfsi.tcl to change the resnames/atomtypes and create datafiles
-5. Copy all needed PDB/datafiles to InputStructures/inp_coordfiles directory
-6. Use PACKMOL to pack the necessary number of atoms/chains.
-7. Use VMD/topotools and combine_lmp.py to generate the initial file. 
+4. Use src_tcl_inp/reschange_RESNAME_mol2pdb.tcl to convert to single monomer of a residue (RESNAME can be vec, mtfsi or peo) to a single monomer datafile
+   Note: All files with "resname*.tcl" corresponds to a single monomer conversion.
+5. Use src_tcl_inp/change_atq_CHAIN.tcl to change the charges/atomtypes of CHAINS (chain can be li-surface, vecmtfsi, peo or co32minus) and create datafiles of single chain
+   Note: All files starting with "change_atq*.tcl" is to change the atomtypes and charges of single chains or surfaces.
+6. Copy all needed PDB/datafiles to InputStructures/inp_coordfiles directory
+7. Use PACKMOL to pack the necessary number of atoms/chains.
+8. Use VMD/topotools and combine_lmp.py to generate the initial file. 
