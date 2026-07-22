@@ -6,12 +6,11 @@ Assumptions
 Impropers are not added (can be added later)
 Have not added restraints to CO32- to mimic semi-solid
 Li-surface motions are restricted to the x-y plane
-NpT of bulk and crystal have not been done. Using the standard cutoff for now. This can be changed though.
 
 Methodology
 ------------
-1. Check how many lithium ions, CO_3^(2-) ions, VEC-MTFSI chains and the number of layers necessary.
-2. Get the charge data are obtained from Gaussian in the Excel sheet.
+1. Check how many lithium ions, CO_3^(2-) ions, VEC-MTFSI chains and the number of layers necessary. All the data are in input_structure.xlsx.
+2. Get the charge data are obtained from Gaussian in the Excel sheet. All the data are in All_Charges.xlsx.
 3. Use Materials studio to generate a single molecule of each type and export as mol2 file, car and mdf files
 4. Use src_tcl_inp/reschange_RESNAME_mol2pdb.tcl to convert to single monomer of a residue (RESNAME can be vec, mtfsi or peo) to a single monomer datafile
    Note: All files with "resname*.tcl" corresponds to a single monomer conversion.
