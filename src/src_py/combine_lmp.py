@@ -2,7 +2,7 @@
 
 from lmp_define import LammpsData
 import aux_functs as af
-
+import os
 
 # Main file for combining data files
 # one template file per species
@@ -10,8 +10,12 @@ import aux_functs as af
 # NOTE VERY IMPORTANT: THE ORDER IN PDB FILE SHOULD BE SAME AS THAT IN
 # FILE_SPECS ARRAY
 
-head_dir =
-'/home/vaidyams/all_codes/files_interface/InputStructures/inpcoord_files'
+#Inputs
+equil_pdb_file = 'filename.pdb'
+if not os.path.exists(equil_pdb_file):
+    raise RuntimeError(f"{equil_pdb_file} not found in {os.getcwd}")
+
+head_dir = '/home/vaidyams/all_codes/files_interface/InputStructures/inpcoord_files'
 
 xmin = -0.5; xmax = 89.0
 ymin = -0.5; ymax = 89.7
@@ -27,8 +31,8 @@ file_specs = [
 ]
 
 
+# Main analysis
 system = af.combine_lammps_system(file_specs, equil_pdb_file)
-
 af.write_lammps_data(filename="combined_system.data",system=system,\
                      box=((xmin,xmax),(ymin,ymax),(zmin,zmax)),\
                      write_atoms='all_atoms.data')
