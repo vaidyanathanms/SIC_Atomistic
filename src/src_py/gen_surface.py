@@ -15,7 +15,7 @@ target_x = 81.2662 # Obtain from averaged bulk simulations
 target_y = 82.1931
 
 nx = 1; ny = 2 # number of atoms in surface unit cells in X,Y
-nz_repeats = 4 # repetitions along surface normal
+nz_repeats = 6 # repetitions along surface normal
 
 
 baseunits = f'{nx}{ny}{nz_repeats}'

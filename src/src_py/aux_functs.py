@@ -4,7 +4,7 @@ from lmp_define import LammpsData
 import re
 import warnings
 
-def combine_lammps_system(file_specs, spacing=5.0):
+def combine_lammps_system(file_specs, equil_pdb_file):
     """
     file_specs = [
         ("Li.data", 100),
@@ -13,7 +13,8 @@ def combine_lammps_system(file_specs, spacing=5.0):
         ("EC.data", 100),
     ]
     """
-
+    pdb_coordinates = af.read_pdb_coordinates(equil_pdb_file)
+    
     data_objects = [LammpsData(fname) for fname, _ in file_specs]
 
     global_masses, atom_type_maps = build_global_type_map_dedup(data_objects, "masses")
@@ -44,8 +45,6 @@ def combine_lammps_system(file_specs, spacing=5.0):
     improper_id_offset = 0
     mol_id_offset = 0
 
-    xshift = 0.0
-
     for ifile, ((fname, ncopy), data) in enumerate(zip(file_specs, data_objects)):
         atom_type_map = atom_type_maps[ifile]
         bond_type_map = bond_type_maps[ifile]
@@ -55,13 +54,6 @@ def combine_lammps_system(file_specs, spacing=5.0):
 
         print(f'Processing {fname}')
         
-        if data.atoms:
-            xmin = min(a["x"] for a in data.atoms)
-            xmax = max(a["x"] for a in data.atoms)
-            dx = (xmax - xmin) + spacing
-        else:
-            dx = spacing
-
         local_mol_ids = sorted(set(a["mol"] for a in data.atoms))
         mol_reindex = {old: i + 1 for i, old in enumerate(local_mol_ids)}
         nmol_template = len(local_mol_ids)
@@ -78,7 +70,7 @@ def combine_lammps_system(file_specs, spacing=5.0):
                     "mol": mol_id_offset + mol_reindex[a["mol"]],
                     "type": atom_type_map[a["type"]],
                     "charge": a["charge"],
-                    "x": a["x"] + xshift,
+                    "x": a["x"],
                     "y": a["y"],
                     "z": a["z"],
                     "extra": a.get("extra",[]),
@@ -136,8 +128,22 @@ def combine_lammps_system(file_specs, spacing=5.0):
             dihedral_id_offset += len(data.dihedrals)
             improper_id_offset += len(data.impropers)
             mol_id_offset += nmol_template
-            xshift += dx
+            
+    # Copy from pdb file
+    if len(pdb_coordinates) != len(system["atoms"]):
+        raise ValueError(
+            f"Atom count mismatch: "
+            f"PDB has {len(pdb_coordinates)} atoms, "
+            f"LAMMPS system has {len(system['atoms'])} atoms"
+        )
 
+    for i, atom in enumerate(system["atoms"]):
+        x, y, z = pdb_coordinates[i]
+
+        atom["x"] = x
+        atom["y"] = y
+        atom["z"] = z
+        
     return system
 
 
@@ -342,3 +348,19 @@ def write_lammps_data(filename, system, box=None, write_atoms=None):
                 )
 
 
+def read_pdb_coordinates(pdb_file):
+    coordinates = []
+
+    with open(filename, "r") as f:
+
+        for line in f:
+
+            if line.startswith("ATOM") or line.startswith("HETATM"):
+
+                x = float(line[30:38])
+                y = float(line[38:46])
+                z = float(line[46:54])
+
+                coordinates.append((x, y, z))
+
+    return coordinates
