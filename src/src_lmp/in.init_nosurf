@@ -1,10 +1,11 @@
 #####################################################
 # Stage 1: Initial Phase Using NVE/limit            #
-# Version: Mar-16-2026                              #
+# Version: Sept-03-2026                             #
+# Use fix lj/wall with p p f                        #
 #####################################################
 
 # Main Variable Definitions
-variable fname index combined_system_edited_nosurf.data 
+variable fname index combined_system_edited_nosurface.data 
 
 # Initialization
 units		real
@@ -13,11 +14,12 @@ atom_style	full
 read_data	${fname}
 
 # Neighbor information
-neighbor        5.0 bin
-neigh_modify	every 10 one 10000
+neighbor        3.0 bin
+neigh_modify	every 1 delay 0 check yes one 10000 
 
 # Pair Information
 pair_style      lj/cut/coul/long 8.0 15.0
+
 include 	pair_coeff.dat 
 pair_modify     shift yes mix geometric
 
@@ -33,6 +35,7 @@ dihedral_style	opls
 include 	dihed_coeff.dat
 
 improper_style  none
+
 
 # Electrostatic Information
 kspace_style	pppm 0.00001
@@ -58,24 +61,26 @@ thermo          1000
 dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
 
 # Main Fixes
+#fix  walls   all wall/reflect zhi EDGE zlo EDGE
+fix  fast all langevin 10.0 10.0 50.0 904297
+fix  integrate all nve/limit 0.01
 fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
 fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
-fix  fast all langevin 1 1 6.99 904297
-fix  integrate all nve/limit 0.01
 
 # Run and Restart Styles
 run_style verlet
 restart   5000 restart1 restart2
-restart   50000 archival_*.restart
+restart   50000 archival_restarts/archival_*.restart
 timestep  0.01
 run	  100000
 
 # Unfix
-unfix wallhi
-unfix walllow
+#unfix walls
 unfix fast
 unfix integrate
+unfix wallhi
+unfix walllow
 
-#Write outputs
-write_data 	nve_limit.data
+#Write Outputs
+write_data 	nve_limit.data pair ij
 write_restart 	restart.init
