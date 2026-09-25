@@ -1,17 +1,25 @@
 #####################################################
-# Stage 3: Main Run Using Nose-Hoover               #
-# Version: Mar-16-2026                              #
+# Stage 3: Short NPT run for Z-dim equilibration    #
+# Version: July-16-2026                             #
+# Uses fix wall/reflect instead of wall/lj	    #
 #####################################################
 
+# Import variable to add for NPT equilibration
+variable   z_vacuum equal 50 # set this as vacuum height
 
 # Initialization
 units		real
-boundary	p p f
+#boundary	p p f # Switch to p p p just for this short step using change_box
 atom_style	full
 read_restart	restart1
+variable  zlo_old equal "zlo"
+variable  zhi_old equal "zhi"
+variable polymer_thick_init equal "v_zhi_old - v_zlo_old"
+variable  zhi_new equal "v_z_vacuum + v_zhi_old"
+change_box  all z final ${zlo_old} ${zhi_new} boundary p p p # Switch to p p p for Z-box equilibration
 
 # Neighbor information
-neighbor        5.0 bin
+neighbor        3.0 bin
 neigh_modify	every 10 one 10000
 
 # Pair Information
@@ -34,7 +42,7 @@ improper_style  none
 
 # Electrostatic Information
 kspace_style    pppm 0.00001
-kspace_modify   slab 3.0
+#kspace_modify   slab 3.0 # No kspace modify for p p p 
 dielectric      1
 
 # Define Groups
@@ -44,32 +52,41 @@ group polymer union sei_peo vec_mtfsi
 group coi_ions type 6:8
 group li_ions type 5
 
-#####################################################
-# Equilibration (Nose-Hoover dynamics at 300K)
-#####################################################
+#########################################################
+# Short NPT eqquilibration (Nose-Hoover dynamics at 300K)
+#########################################################
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-thermo_style	custom step temp pe press density
+thermo_style	custom step temp etotal press density
 thermo          10000
-dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
+dump            main all custom 10000 config_shortnpt.lammpstrj id type xu yu zu
+
+# Compute volume for the polymer length and corresponding pressure
+variable   active_vol equal "lx * ly * v_polymer_thick_init * f_integrate"
+compute    poly_press all pressure thermo_temp volume active_vol
+thermo_modify press poly_press
 
 # Main Fixes
-fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
-fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
-fix  fast polymer shake 0.0001 30 1000 b 2 10 14
-fix  integrate all npt temp 300.0 300.0 100.0 x 1.0 1.0 1000.0 y 1.0 1.0 1000.0 couple none
+fix  momentum all momentum 100000 linear 1 1 1
+fix  fast polymer shake 0.0001 30 5000000 b 2 10 14
+fix  integrate all npt temp 300.0 300.0 100.0 z 1.0 1.0 1000.0 # only barostat in z-direction
+fix_modify integrate press poly_press
+fix  wall_bot all wall/reflect zlo ${zlo_old} pbc yes # ADD PBC YES TO SCALE WITH PBC
+fix  wall_top all wall/reflect zhi ${zhi_old} pbc yes # Create a mirror corresponding to polymer z-dim
+#fix  integrate all npt temp 300.0 300.0 100.0 x 1.0 1.0 1000.0 y 1.0 1.0 1000.0 couple none
+#fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
+#fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
 
 # Run and Restart Styles
 run_style verlet
-restart   5000 restart1 restart2
-restart   500000 archival_*.restart
+restart   500000  restart1 restart2
+restart   1000000 archival_restarts/archival_*.restart
 
-#timestep  1.0
-#run  20000000 upto 
+timestep  1.0
+run 1000000
 
-timestep  2.0
-run  40000000 upto
+unfix  momentum # unfix and now run for removing all biases
 
 # Unfix
 unfix wallhi
@@ -78,5 +95,5 @@ unfix fast
 unfix integrate
 
 # Write Outputs
-write_data      nvt.dat pair ij
-write_restart 	restart.nvt
+write_data      npt.data pair ij
+write_restart 	restart.npt
