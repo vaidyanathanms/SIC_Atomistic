@@ -5,15 +5,8 @@ import re
 import warnings
 
 def combine_lammps_system(file_specs, equil_pdb_file):
-    """
-    file_specs = [
-        ("Li.data", 100),
-        ("FSI.data", 100),
-        ("PEO.data", 100),
-        ("EC.data", 100),
-    ]
-    """
-    pdb_coordinates = af.read_pdb_coordinates(equil_pdb_file)
+    print(f"The PDB file used for creating the inputs is {equil_pdb_file}")
+    pdb_coordinates = read_pdb_coordinates(equil_pdb_file)
     
     data_objects = [LammpsData(fname) for fname, _ in file_specs]
 
@@ -351,7 +344,7 @@ def write_lammps_data(filename, system, box=None, write_atoms=None):
 def read_pdb_coordinates(pdb_file):
     coordinates = []
 
-    with open(filename, "r") as f:
+    with open(pdb_file, "r") as f:
 
         for line in f:
 
