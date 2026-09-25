@@ -7,27 +7,29 @@ import os
 # Main file for combining data files
 # one template file per species
 # Use the atoms from equilibrated PDB file
+
 # NOTE VERY IMPORTANT: THE ORDER IN PDB FILE SHOULD BE SAME AS THAT IN
 # FILE_SPECS ARRAY
 
 #Inputs
-equil_pdb_file = 'filename.pdb'
+equil_pdb_file = 'li_co32m_peo_vecmtfsi_fan_0pt06.pdb_FORCED'
 if not os.path.exists(equil_pdb_file):
     raise RuntimeError(f"{equil_pdb_file} not found in {os.getcwd}")
 
 head_dir = '/home/vaidyams/all_codes/files_interface/InputStructures/inpcoord_files'
 
-xmin = -0.5; xmax = 89.0
-ymin = -0.5; ymax = 89.7
-zmin =  0.0; zmax = 178.5
+xmin = -0.05; xmax = 83.5776000
+ymin = -0.05; ymax = 83.7225700
+zmin = -0.60; zmax = 169.355206
 
+# File-specification inputs - Maintain the order as that of PACKMOL input
 file_specs = [
-    (head_dir+"/li_surface/lithium_large_edited.data", 1),
-    (head_dir+"/peo_polymer/PEO_Optimized_CH3terminated_editedterminal_edited.data", 26),
-    (head_dir+"/li_monomer/Li_Atom_edited.data", 1284),
-    (head_dir+"/co32m_monomer/co3_2minus_edited.data", 642),
-    (head_dir+"/vecmtfsi_polymer/InputStructures/inp_coordfiles/V27M5_150T_edited.data", 120),
-    (head_dir+"/li_monomer/InputStructures/inp_coordfiles/Li_Atom_edited.data",600)
+    (head_dir+"/li_surface/lithium_large_24_17_6_edited.data", 1),
+    (head_dir+"/peo_polymer/60PEO_Optimized_CH3terminated_editedterminal_edited.data", 20),
+    (head_dir+"/li_monomer/Li_Atom_edited.data", 1000),
+    (head_dir+"/co32m_monomer/co3_2minus_edited.data", 500),
+    (head_dir+"/vecmtfsi_polymer/V30M2_150T_edited.data", 120),
+    (head_dir+"/li_monomer/Li_Atom_edited.data",240)
 ]
 
 
