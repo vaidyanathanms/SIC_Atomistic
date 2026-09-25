@@ -1,6 +1,6 @@
 #####################################################
 # Stage 2: Main Run Using Langevin                  #
-# Version:Dec-20-2017                               #
+# Version: Mar-18-2026                              #
 #####################################################
 
 
@@ -11,13 +11,13 @@ atom_style	full
 read_restart	restart1
 
 # Neighbor information
-neighbor        5.0 bin
+neighbor        3.0 bin
 neigh_modify	every 10 one 10000
 
 # Pair Information
-pair_style      lj/cut/coul/long 8.0 15.0
+pair_style      lj/cut/coul/long 9.0 15.0
 include         pair_coeff.dat
-pair_modify     shift yes mix geometric
+pair_modify     mix geometric shift yes
 
 # Topology Information
 bond_style      harmonic
@@ -38,8 +38,45 @@ kspace_modify   slab 3.0
 dielectric      1
 
 # Define Groups
-group bottom_atoms type 1
-group not_bottom subtract all bottom_atoms
+group li_surface type 1
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
+
+# Define variables based on Li-diameter
+variable z0 equal 0.005
+variable z1 equal 2.4
+variable z2 equal 4.8
+variable z3 equal 7.2
+variable z4 equal 9.6
+
+# Define regions
+region rlayer1 block INF INF INF INF ${z0} ${z1} units box
+region rlayer2 block INF INF INF INF ${z1} ${z2} units box
+region rlayer3 block INF INF INF INF ${z2} ${z3} units box
+region rlayer4 block INF INF INF INF ${z3} ${z4} units box
+
+# Group into bottom two layers (freeze), 3rd (spring/self) and mobile 4th
+group glayer1 region rlayer1
+group glayer2 region rlayer2
+group glayer3 region rlayer3
+group glayer4 region rlayer4
+
+group li_layer1 intersect glayer1 li_surface
+group li_layer2 intersect glayer2 li_surface
+
+group li_bottom union li_layer1 li_layer2
+group li_midlayer intersect glayer3 li_surface
+group li_toplayer intersect glayer4 li_surface
+
+# Define mobile groups (except bottom two)
+group mobile subtract all li_bottom
+
+# Define initial velocities
+velocity li_bottom set 0.0 0.0 0.0
+velocity mobile create 300.0 430483 dist gaussian mom yes
 
 #####################################################
 # Equilibration (Langevin dynamics at 300K)
@@ -47,9 +84,7 @@ group not_bottom subtract all bottom_atoms
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-velocity        all set 0.0 0.0 0.0
-velocity        not_bottom create 300.0 1231 mom yes
-write_data      init_config.data
+write_data      init_config.data pair ij
 thermo_style	custom step temp pe
 thermo          10000
 dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
@@ -57,19 +92,36 @@ dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
 # Main Fixes
 fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
 fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
-fix  2 not_bottom langevin 300.0 300.0 1000.0 904297
-fix  freeze bottom_atoms setforce NULL NULL 0.0
-fix  1 all nve
+fix  freeze li_bottom setforce 0.0 0.0 0.0 # Freeze bottom two layers
+fix  tether li_midlayer spring/self 3.0 # Spring/self to mid-layer
+fix  fast polymer shake 0.0001 30 10000 b 2 10 14
+fix  thermostat mobile langevin 300.0 300.0 1000.0 48279 zero yes
+fix  integrate mobile nve
 
-# Run Styles
+# Run and restart styles
 run_style verlet
 restart   5000 restart1 restart2
 restart   500000 archival_*.restart
-timestep  0.5
-run	  10000000
 
-timestep  1
-run  5000000
-unfix 1
-unfix 2
+
+timestep  0.01
+run       100000
+
+timestep  0.1
+run       100000 
+
+timestep  1.0
+run       100000 
+
+# Unfix
+unfix fast
+unfix tether
+unfix freeze
+unfix wallhi
+unfix walllow
+unfix thermostat
+unfix integrate
+
+# Write outputs
+write_data      langevin.data pair ij
 write_restart 	restart.langevin

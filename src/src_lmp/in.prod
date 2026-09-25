@@ -8,12 +8,12 @@
 units		real
 boundary	p p f
 atom_style	full
-#read_restart    restart1
-read_restart	archives/archival_*.restart
+read_restart    restart1
+#read_restart	archive_restarts/archival_*.restart
 
 # Neighbor information
-neighbor        5.0 bin
-neigh_modify	every 3 one 10000
+neighbor        3.0 bin
+neigh_modify	every 1 one 20000 page 200000
 
 # Pair Information
 pair_style      lj/cut/coul/long 8.0 15.0
@@ -38,6 +38,7 @@ kspace_style    pppm 0.00001
 kspace_modify   slab 3.0
 dielectric      1
 
+write_data      lmp_nvt.data
 # Define Groups
 group li_surface type 1
 group sei_peo type 2:4
@@ -75,8 +76,6 @@ group li_toplayer intersect glayer4 li_surface
 # Define mobile groups (except bottom two)
 group mobile subtract all li_bottom
 
-# Define initial velocities
-velocity li_bottom set 0.0 0.0 0.0
 
 #####################################################
 # Equilibration (Nose-Hoover dynamics at 300K)
@@ -85,8 +84,9 @@ velocity li_bottom set 0.0 0.0 0.0
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
 thermo_style	custom step temp pe
-thermo          100000
-dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
+thermo          1000000
+dump            main all custom 5000 config_prod.lammpstrj id type xu yu zu
+dump_modify     main append yes
 
 # Main Fixes
 fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
@@ -100,13 +100,10 @@ fix  integrate mobile nvt temp 300.0 300.0 100.0 # integrate all except bottom
 # Run Styles
 run_style verlet
 restart   5000 restart1 restart2
-restart   500000 archives/archival_*.restart
+restart   500000 archive_restarts/archival_*.restart
  
-timestep  0.1
-run  12000000 upto 
-
-timestep  0.5
-run  15000000 upto 
+#timestep  0.5
+#run  15000000 
 
 timestep  1.0
 run  25000000 upto
