@@ -17,6 +17,7 @@ file_specs = [
 system = af.combine_lammps_system(file_specs, spacing=5.0)
 
 af.write_lammps_data(filename="../../InputStructures/combined/combined_system.data", system=system,\
+                     trajdata='traj.pdb',\
                      box=((0.0, 89.0), (0.0, 89.7), (0.0, 178.5)),\
                      write_atoms='../../InputStructures/combined/all_atoms.data')
 
