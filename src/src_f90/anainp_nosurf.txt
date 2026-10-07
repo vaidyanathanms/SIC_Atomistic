@@ -3,9 +3,9 @@ combined_system_edited_nosurface.data
 trajectory_file
 config_prod.lammpstrj
 nframes
-200
+1000
 skipfr
-10
+3000
 freqfr
 0
 num_groups
