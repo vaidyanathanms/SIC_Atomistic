@@ -4,7 +4,7 @@
 #####################################################
 
 # Main Variable Definitions
-variable fname index combined_system_edited.data 
+variable fname index combined_system.data 
 
 # Initialization
 units		real
@@ -40,33 +40,80 @@ kspace_modify   slab 3.0
 dielectric	1
 
 # Define Groups
-group bottom_atoms type 1
-group not_bottom subtract all bottom_atoms
+group li_surface type 1
+group not_surface subtract all li_surface
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
 
-#####################################################
-# Initial Dynamics (nve/limit at kT=1)
-#####################################################
+# Define variables based on Li-diameter
+variable z0 equal 0.005
+variable z1 equal 2.4
+variable z2 equal 4.8
+variable z3 equal 7.2
+variable z4 equal 9.6
+
+# Define regions
+region rlayer1 block INF INF INF INF ${z0} ${z1} units box
+region rlayer2 block INF INF INF INF ${z1} ${z2} units box
+region rlayer3 block INF INF INF INF ${z2} ${z3} units box
+region rlayer4 block INF INF INF INF ${z3} ${z4} units box
+
+# Group into bottom two layers (freeze), 3rd (spring/self) and mobile 4th
+group glayer1 region rlayer1
+group glayer2 region rlayer2
+group glayer3 region rlayer3
+group glayer4 region rlayer4
+
+group li_layer1 intersect glayer1 li_surface
+group li_layer2 intersect glayer2 li_surface
+
+group li_bottom union li_layer1 li_layer2
+group li_midlayer intersect glayer3 li_surface
+group li_toplayer intersect glayer4 li_surface
+
+# Define mobile groups (except bottom two)
+group mobile subtract all li_bottom
+
+# Define initial velocities
+velocity li_surface set 0.0 0.0 0.0
+velocity not_surface create 100.0 430483 dist gaussian mom yes
+
+###############################################################
+# Initial Dynamics (nve/limit at 300K). Freeze all surface atoms
+##############################################################
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-velocity 	not_bottom create 300 1231
+velocity 	mobile create 300 123123 mom yes
 thermo_style	custom step temp pe
 thermo          1000
 dump            main all custom 2000 config_${ts}.lammpstrj id type xu yu zu
 
 # Main Fixes
-fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
-fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
-fix  2 not_bottom langevin 1 1 6.99 904297
-fix  freeze bottom_atoms setforce NULL NULL 0.0
-fix  1 all nve/limit 0.03
+fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123 units box
+fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123 units box
+fix  freeze1 li_surface setforce 0.0 0.0 0.0 # Freeze all surface layers
+#fix  fast polymer shake 0.0001 30 10000 b 2 10 14 # don't use with fix nve/limit
+fix  thermostat not_surface langevin 100.0 300.0 1000.0 48279 zero yes # don't thermostat initially
+fix  integrate not_surface nve/limit 0.005
 
 # Run Styles
 run_style verlet
 restart   5000 restart1 restart2
-restart   50000 archival_*.restart
-timestep  0.01
-run	  100000
-unfix 1
-unfix 2
+restart   50000 archive_restarts/archival_*.restart
+timestep  0.05
+run	  1000000
+
+# Unfix
+unfix wallhi
+unfix walllow
+unfix freeze1
+unfix thermostat
+unfix integrate
+
+# Write Outputs
+write_data 	nve_limit.data
 write_restart 	restart.init

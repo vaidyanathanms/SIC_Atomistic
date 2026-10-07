@@ -1,10 +1,10 @@
-#####################################################
-# Stage 1: Initial Phase Using NVE/limit            #
-# Version: Mar-16-2026                              #
-#####################################################
+######################################################################
+# Stage 0: Remove surface atoms from combined_system.data            #
+# Version: Sep-02-2026                                               #
+######################################################################
 
 # Main Variable Definitions
-variable fname index combined_system_edited.data 
+variable fname index combined_system.data 
 
 # Initialization
 units		real
@@ -50,5 +50,10 @@ group li_ions type 5
 
 delete_atoms group li_surface
 
+# Keep mass/paircoeff properties of type=1 in all the subsequent runs, but there won't be any atom ID with that type 
+reset_atoms id # Re-number from 1-N and change corresponding topology
 write_data 	combined_system_nosurface.data pair ij
 write_restart   restart.nosurf
+
+run 0 # To initialize for write_dump
+write_dump all custom dump_nosurface.data id mol type q x y z ix iy iz modify sort id #For checking

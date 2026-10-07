@@ -1,5 +1,5 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 2: Apr-27-2026-------------------------------
+!---------------Version 4: Sept-24-2026------------------------------
 !---------------Main File: analyze_statics.f90-----------------------
 !********************************************************************
 
@@ -27,7 +27,7 @@ MODULE STATICPARAMS
   INTEGER :: layerana_flag
   INTEGER :: layer_grpflag_interf, layer_grpflag_surf
   INTEGER :: layrdf_flag
-  INTEGER :: rdf2dflag
+  INTEGER :: rdf2dflag,neighlayerflag
 
   !Required Input Variables
   INTEGER :: initdist
@@ -47,6 +47,7 @@ MODULE STATICPARAMS
   !Variables required for computing layerwise static properties
   INTEGER :: major_axis
   INTEGER :: rdf2dfreq,rdf2dmaxbin,npairs_2drdf
+  INTEGER :: neighlfreq, npairs_neigh
   REAL    :: dbinavg, major_boxval
   REAL    :: epspre, epsinit, segper, epsinc
   REAL    :: rdf2dvolavg,rdf2dbinavg
@@ -62,7 +63,7 @@ MODULE STATICPARAMS
   !Layerwise group details
   INTEGER :: interfgrp_a, interfgrp_b
   INTEGER :: maxinterf, nmax_layers
-  INTEGER :: num_mons_per_layer, nlayer_groups  
+  INTEGER :: num_mons_per_layer, nlayer_groups
     
   !File names and unit numbers
   CHARACTER(LEN = 256) :: ana_fname,data_fname,traj_fname,log_fname
@@ -115,10 +116,14 @@ MODULE STATICPARAMS
   INTEGER,ALLOCATABLE,DIMENSION(:)  :: seg_dtype
   
   !Required Arrays - Layer-wise calculations
-  REAL,ALLOCATABLE,DIMENSION(:,:,:) :: rdf2darray
-  INTEGER,ALLOCATABLE,DIMENSION(:,:):: pairs_2drdf_arr
-
-
+  REAL,ALLOCATABLE,DIMENSION(:,:,:) :: rdf2darray,neighlayeravg
+  INTEGER,ALLOCATABLE,DIMENSION(:,:):: pairs_2drdf_arr&
+       &,pairs_neigh_arr
+  REAL, ALLOCATABLE, DIMENSION(:) :: rcut_neigh_arr
+  REAL, ALLOCATABLE, DIMENSION(:,:) :: catneighlayeravg
+  REAL, ALLOCATABLE, DIMENSION(:,:) :: state_count_avg
+  REAL, ALLOCATABLE, DIMENSION(:,:,:) :: catmixneighlayeravg
+  
   !Required Arrays - Dynamic Quantities
   INTEGER*8,ALLOCATABLE,DIMENSION(:) :: tarr_lmp
   REAL*8,ALLOCATABLE,DIMENSION(:,:) :: trx_lmp,try_lmp,trz_lmp

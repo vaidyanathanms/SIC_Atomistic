@@ -1,0 +1,107 @@
+#####################################################
+# Stage 4: Short Z-dimension equilibration in NPT   #
+# Version: Sept-03-2026                             #
+# Uses p p p and extra vacuum			    #
+#####################################################
+
+# Main Variable Definitions
+variable extra_vac  equal 60.0 # extra vacuum at top for p p p
+
+# Initialization
+units		real
+atom_style	full
+read_restart	restart1
+
+# Capture the exact packed polymer bounds before modifying the box
+variable zlo_old string $(zlo)
+variable zhi_old string $(zhi)
+
+# Now EXTRA vacuum using extra_vac near zhi for p p p b/c
+variable 	zhi_new equal ${extra_vac} + ${zhi_old}
+change_box	all z final ${zlo_old} ${zhi_new} boundary p p p #change b/c
+
+# Needs to be careful. Compute zlo_wall and zhi_wall considering extra vacuum
+variable zlo_wall equal "zlo"
+variable zhi_wall equal "zhi - v_extra_vac"
+
+
+# Neighbor information
+neighbor        3.0 bin
+neigh_modify	every 1 delay 0 check yes one 10000
+
+# Pair Information
+pair_style      lj/cut/coul/long 8.0 15.0
+include         pair_coeff.dat
+pair_modify     shift yes mix geometric
+
+# Topology Information
+bond_style      harmonic
+special_bonds   lj/coul 0.0 0.0 0.5
+include         bond_coeff.dat
+
+angle_style     harmonic
+include         angle_coeff.dat
+
+dihedral_style  opls
+include         dihed_coeff.dat
+
+improper_style  none
+
+# Electrostatic Information
+kspace_style    pppm 0.00001
+# kspace_modify   slab 3.0 # boundary p p p 
+dielectric      1
+
+# Define Groups
+group sei_peo type 2:4
+group vec_mtfsi type 9:22
+group polymer union sei_peo vec_mtfsi
+group coi_ions type 6:8
+group li_ions type 5
+
+#####################################################
+# Equilibration - NPT (Nose-Hoover dynamics at 300K)
+#####################################################
+
+# Compute active polymer length
+variable current_poly_height equal "lz - v_extra_vac"
+
+# Diagonostics
+variable wall_sep equal "v_zhi_wall-v_zlo_wall"
+variable occupied_fraction equal "v_wall_sep/lz"
+variable confined_density equal "density / v_occupied_fraction"
+
+# Initiate/Write Atoms and Other Details
+variable        ts equal step
+thermo_style	custom step temp pe press pxx pyy pzz lx ly lz v_confined_density v_wall_sep v_occupied_fraction lz v_current_poly_height
+thermo          5000
+dump            main all custom 5000 config_npt.lammpstrj id type xu yu zu
+
+
+# Main Fixes
+fix  drift all momentum 100000 linear 1 1 0 # Do not barostat z
+fix  fast polymer shake 0.0001 30 50000 b 2 10 14 # Slightly more frequent outputs
+fix  wallhi   all wall/lj126 zhi v_zhi_wall 0.5 0.5 0.56123 pbc yes
+fix  walllow  all wall/lj126 zlo v_zlo_wall 0.5 0.5 0.56123 pbc yes
+# Only barostat z - direction. X and Y are from lithium surface
+fix  integrate all npt temp 300.0 300.0 100.0 z 1.0 1.0 1000.0
+
+# Run and Restart Styles
+run_style verlet
+restart   100000 restart1 restart2
+restart   1000000 archival_restarts/archival_*.restart
+
+timestep  1.0
+run 2000000 # short fix to equilibrate momentum and pressure equilibration
+
+# Unfix
+unfix wallhi
+unfix walllow
+unfix drift
+unfix fast
+unfix integrate
+
+# Write output
+write_data nptequil.data
+write_restart restart.nptequil
+

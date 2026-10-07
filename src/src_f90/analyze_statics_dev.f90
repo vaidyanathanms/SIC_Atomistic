@@ -1,5 +1,5 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 2: Dev_Apr-27-2026---------------------------
+!---------------Version 3: Dev_Sept-24-2026--------------------------
 !---------------Parameter File: params_statics.f90-------------------
 !********************************************************************
 
@@ -293,6 +293,33 @@ SUBROUTINE READ_ANA_IP_FILE()
 
            CALL COUNT_ATOMS_WITH_TYPE_I(pairs_2drdf_arr(i,2)&
                 &,pairs_2drdf_arr(i,3))
+
+        END DO
+
+     ELSEIF(dumchar == 'layer_neighs') THEN
+
+        IF(layer_grpflag_interf == 0 .AND. layer_grpflag_surf == 0)&
+             & THEN
+           PRINT *, "ERROR: Define domain subdivision (interface or su&
+                &rface)"
+           STOP
+        END IF
+
+        neighlayerflag = 1
+        READ(anaread,*,iostat=ierr) neighlfreq,npairs_neigh,maxneighsize
+        
+        ALLOCATE(pairs_neigh_arr(npairs_neigh,2),stat = AllocateStatus)
+        IF(AllocateStatus/=0) STOP "did not allocate pairs_neigh_arr"
+
+        ALLOCATE(rcut_neigh_arr(npairs_neigh),stat = AllocateStatus)
+        IF(AllocateStatus/=0) STOP "did not allocate pairs_neigh_arr"
+
+
+        pairs_neigh_arr = 0; rcut_neigh_arr = 0.0
+        DO i = 1,npairs_neigh
+
+           READ(anaread,*,iostat=ierr) pairs_neigh_arr(i,1),&
+                & pairs_neigh_arr(i,2), rcut_neigh_arr(i)
 
         END DO
 
@@ -687,6 +714,8 @@ SUBROUTINE READ_DATAFILE()
   
   PRINT *, "Datafile read finished..."
 
+#  IF(neighlayerflag) CALL COUNT_UNIQUE_CO3_MOLECULES()
+  
 END SUBROUTINE READ_DATAFILE
 
 !--------------------------------------------------------------------
@@ -746,6 +775,7 @@ END SUBROUTINE COMPUTE_INIT_NLINES
 SUBROUTINE FILL_GROUP_ARRAY(group_id,ntypes_per_group&
      &,types_in_group_id)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -785,6 +815,7 @@ END SUBROUTINE FILL_GROUP_ARRAY
 SUBROUTINE FILL_LAYERGROUP_ARRAY(group_id,ntypes_per_group&
      &,types_in_group_id)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -822,6 +853,7 @@ END SUBROUTINE FILL_LAYERGROUP_ARRAY
 
 SUBROUTINE OUTPUT_ALL_GROUPS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -880,6 +912,7 @@ END SUBROUTINE OUTPUT_ALL_GROUPS
 
 SUBROUTINE COUNT_ATOMS_WITH_TYPE_I(inptype,outcnt)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
   
@@ -1095,73 +1128,6 @@ SUBROUTINE STRUCT_MAIN(tval)
      IF(mod(tval-1,densfreq)==0) CALL COMPUTE_DENSPROFILES(tval)     
 
   END IF
-        
-!!$  IF(rdfflag) THEN
-!!$     
-!!$     IF(tval == 1) THEN
-!!$
-!!$        CALL SYSTEM_CLOCK(t1,clock_rate,clock_max)
-!!$        CALL COMPUTE_RDF(tval)
-!!$        CALL SYSTEM_CLOCK(t2,clock_rate,clock_max)
-!!$        PRINT *, 'Elapsed real time for RDF analysis: ',REAL(t2&
-!!$             &-t1)/REAL(clock_rate), ' seconds'
-!!$
-!!$     END IF
-!!$     IF(mod(tval-1,rdffreq)==0) CALL COMPUTE_RDF(tval)     
-!!$     
-!!$  END IF
-!!$
-!!$  IF(catan_neighcalc) THEN
-!!$     
-!!$     IF(tval == 1) THEN
-!!$
-!!$        cat_an_neighavg = 0.0; an_cat_neighavg=0.0
-!!$        CALL SYSTEM_CLOCK(t1,clock_rate,clock_max)
-!!$        CALL CAT_AN_NEIGHS()
-!!$        CALL SYSTEM_CLOCK(t2,clock_rate,clock_max)
-!!$        PRINT *, 'Elapsed real time for neighbor analysis: ',REAL(t2&
-!!$             &-t1)/REAL(clock_rate), ' seconds'
-!!$
-!!$     END IF
-!!$     
-!!$     IF(mod(tval,neighfreq) == 0) CALL CAT_AN_NEIGHS()
-!!$     
-!!$  END IF
-!!$
-!!$  IF(bfrdf_calc) THEN
-!!$     
-!!$     IF(tval == 1) THEN
-!!$        rdf_p_fb = 0.0; rdf_p_ff=0.0; rdf_p_bb = 0.0        
-!!$        CALL SYSTEM_CLOCK(t1,clock_rate,clock_max)
-!!$        CALL  SORT_POLY_FREE_BOUND_COMPLEX(tval)
-!!$        CALL SYSTEM_CLOCK(t2,clock_rate,clock_max)
-!!$        PRINT *, 'Elapsed real time for bound/free RDF: ',REAL(t2&
-!!$             &-t1)/REAL(clock_rate), ' seconds'           
-!!$     END IF
-!!$     
-!!$     IF(mod(tval,rdffreq) == 0) CALL&
-!!$          & SORT_POLY_FREE_BOUND_COMPLEX(tval)
-!!$     
-!!$  END IF
-!!$
-!!$  IF(clust_calc) THEN
-!!$
-!!$     IF(tval == 1) THEN
-!!$
-!!$        clust_avg = 0
-!!$        CALL SYSTEM_CLOCK(t1,clock_rate,clock_max)
-!!$        CALL CLUSTER_ANALYSIS(tval)
-!!$        CALL SYSTEM_CLOCK(t2,clock_rate,clock_max)
-!!$        PRINT *, 'Elapsed real time for cluster analysis= ',REAL(t2&
-!!$             &-t1)/REAL(clock_rate), ' seconds'           
-!!$     ELSE
-!!$        
-!!$        CALL CLUSTER_ANALYSIS(tval)
-!!$     
-!!$     END IF
-!!$
-!!$  END IF
-
 
 END SUBROUTINE STRUCT_MAIN
 
@@ -1312,6 +1278,7 @@ END SUBROUTINE COMPUTE_DENSPROFILES
 ! This is obsolete with groups
 SUBROUTINE SORTALLARRAYS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -1494,6 +1461,7 @@ END SUBROUTINE SORTALLARRAYS
 
 SUBROUTINE SANITY_CHECK_IONTYPES()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -1750,6 +1718,7 @@ SUBROUTINE LAYERWISE_MAIN()
   END IF
 
   IF(rdf2dflag) CALL OUTPUT_LAYERRDF()
+  IF(neighlayerflag) CALL OUTPUT_NEIGH_LAYERS()
   
 END SUBROUTINE LAYERWISE_MAIN
 
@@ -1929,6 +1898,7 @@ SUBROUTINE INITIAL_DOMAIN_CLASSIFICATION(tval)
   ! This is for non-periodic boundary conditions
   ! n_domains = n_interfaces + 1
   ! Only done at t = 0 using the density profile
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -2388,7 +2358,7 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES_BOTTOMSURF(tval)
   IF(AllocateStatus /=0 ) STOP "Allocation seg_dtype failed..."
   CALL ASSIGN_DOMAINID(tval)
 
-  layer_deltaz = MIN(delz_1, delz_2) ! Take the min of two
+  layer_deltaz = delz_1 !MIN(delz_1, delz_2) Min won't work if delz_2<delz_1
   zinner = zmin
   seg_typcnt = 0
 
@@ -2400,11 +2370,11 @@ SUBROUTINE COMPARTMENTALIZE_PARTICLES_BOTTOMSURF(tval)
      dum_typ = -1 !initialize everything to -1
      seg_typcnt = 0 !initialize all counts to 0     
      zouter = zinner + layer_deltaz
-
+     
      !Sanity check
      IF(p == nmax_layers) THEN
         IF(ABS(zouter - interpos(1)) > 0.1) THEN
-           PRINT *, "Something wrong with binning at tval: ", tval
+           PRINT *, "Layer: Something wrong with binning at tval: ", tval
            PRINT *, zinner, zouter, interpos(1), layer_deltaz, p
            STOP
         END IF
@@ -2527,6 +2497,7 @@ END SUBROUTINE COMPARTMENTALIZE_PARTICLES_BOTTOMSURF
 
 SUBROUTINE ASSIGN_DOMAINID(tval)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -2635,12 +2606,38 @@ SUBROUTINE LAYERWISE_ANALYSIS(tval,ipos,num_mons,segwidth)
      CALL RDF2D_LAYER(tval,ipos,num_mons,segwidth)
   END IF
 
+  IF(neighlayerflag .AND. tval == 1) THEN
+     IF(ipos == 1) THEN
+        neighlayeravg = 0.0
+        catneighlayeravg = 0.0
+        catmixneighlayeravg = 0.0
+        state_count_avg = 0.0
+     END IF
+     CALL SYSTEM_CLOCK(t1,clock_rate,clock_max)
+     CALL NEIGHS_LAYER(tval,ipos,num_mons,segwidth)
+     CALL CAT_MIXNEIGH_DIST_LAYER(tval,ipos,num_mons,segwidth)
+!     CALL CAT_NEIGHMOL_DIST_LAYER(tval,ipos,num_mons,segwidth)
+     CALL SYSTEM_CLOCK(t2,clock_rate,clock_max)
+     PRINT *, 'Elapsed real time for neighbors = ',REAL(t2-t1)/&
+          & REAL(clock_rate), " seconds"           
+  ELSEIF(neighlayerflag .AND. mod(tval,neighlfreq) == 0) THEN
+     CALL NEIGHS_LAYER(tval,ipos,num_mons,segwidth)
+     CALL CAT_MIXNEIGH_DIST_LAYER(tval,ipos,num_mons,segwidth)
+!     CALL CAT_NEIGHMOL_DIST_LAYER(tval,ipos,num_mons,segwidth)
+  END IF
+
+  
+!!$  IF(iondiff .OR. ciondiff) THEN
+!!$     CALL LOCAL_MSD_SQT(tval,p,num_mons_per_layer,segwid)
+!!$  END IF
+  
 END SUBROUTINE LAYERWISE_ANALYSIS
 
 !--------------------------------------------------------------------
 
 SUBROUTINE RDF2D_LAYER(tval,ipos,num_mons,segwidth)
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
   
@@ -2750,6 +2747,325 @@ END SUBROUTINE RDF2D_LAYER
 
 !--------------------------------------------------------------------
 
+SUBROUTINE NEIGHS_LAYER(tval,ipos,num_mons,segwidth)
+
+  USE SUBROUTINE_DEFS
+  USE STATICPARAMS
+
+  IMPLICIT NONE
+
+  REAL, INTENT(IN) :: segwidth
+  INTEGER, INTENT(IN) :: tval, ipos, num_mons
+  INTEGER :: i,j,a1id,a2id,paircnt,neigh_cnt
+  INTEGER :: a1type,a2type,reftype,seltype
+  INTEGER,DIMENSION(1:maxneighsize,npairs_neigh)::neigh_inst
+  REAL :: rxval, ryval, rzval, rval
+
+  DO i = 1,maxneighsize
+     DO j = 1,npairs_neigh
+        neigh_inst(i,j) = 0
+     END DO
+  END DO
+    
+!!$!$OMP PARALLEL PRIVATE(paircnt,reftype,seltype,rneigh_cut,&
+!!$!$OMP& i,j,a1id,a2id,a1type,a2type,rxval,ryval,rzval,rval,neigh_cnt) &
+!!$!$OMP& REDUCTION(+:neigh_inst)  
+!!$!$OMP DO
+  DO paircnt = 1,npairs_neigh
+
+     reftype = pairs_neigh_arr(paircnt,1)
+     seltype = pairs_neigh_arr(paircnt,2)
+     rneigh_cut = rcut_neigh_arr(paircnt)
+
+     IF(.NOT. ANY(seg_typ == reftype)) CYCLE
+     IF(.NOT. ANY(seg_typ == seltype)) CYCLE
+     
+     DO i = 1,num_mons
+
+        a1id   = seg_aid(i)     
+        a1type = seg_typ(i)
+        neigh_cnt = 0
+
+
+        IF(a1type .NE. aidvals(a1id,3)) THEN
+           PRINT *, "1", i, a1type, a1id, aidvals(a1id,3)
+           STOP "ERROR: Invalid i type found in NEIGH-LAYER"
+        END IF
+
+        IF(a1type .NE. reftype) CYCLE
+
+        DO j = 1,num_mons
+
+           a2id   = seg_aid(j)
+           a2type = seg_typ(j)
+
+           IF(a2type .NE. aidvals(a2id,3)) THEN
+              PRINT *, "2",j, a2type, a2id, aidvals(a2id,3)
+              STOP "ERROR: Invalid j type found in NEIGH-LAYER"
+           END IF
+
+           IF(a2type .NE. seltype) CYCLE
+           IF(a1id == a2id) CYCLE
+           
+           rxval = trx_lmp(a1id,tval) - trx_lmp(a2id,tval) 
+           ryval = try_lmp(a1id,tval) - try_lmp(a2id,tval) 
+           rzval = trz_lmp(a1id,tval) - trz_lmp(a2id,tval) 
+           
+           rxval = rxval - box_xl*ANINT(rxval/box_xl)
+           ryval = ryval - box_yl*ANINT(ryval/box_yl)
+           rzval = rzval - box_zl*ANINT(rzval/box_zl)
+
+           rval = sqrt(rxval**2 + ryval**2 + rzval**2)
+
+           IF(rval .LT. rneigh_cut) THEN
+              
+              neigh_cnt = neigh_cnt + 1
+           
+           END IF
+
+        END DO
+
+
+        IF(neigh_cnt + 1 .GT. maxneighsize) THEN
+
+           PRINT *, "Neighbor count exceeded max size"
+           PRINT *, neigh_cnt, maxneighsize
+           STOP
+
+        END IF
+
+        neigh_inst(neigh_cnt+1,paircnt) = neigh_inst(neigh_cnt+1&
+             &,paircnt) + 1
+
+     END DO
+
+  END DO
+
+  
+  DO  i = 1,maxneighsize
+     DO j = 1,npairs_neigh
+        neighlayeravg(i,j,ipos) = neighlayeravg(i,j,ipos) +&
+             & REAL(neigh_inst(i,j))
+     END DO
+  END DO
+
+END SUBROUTINE NEIGHS_LAYER
+
+!--------------------------------------------------------------------
+
+! Find mixed coordination of different oxygens
+SUBROUTINE CAT_MIXNEIGH_DIST_LAYER(tval,ipos,num_mons,segwidth)
+
+  USE SUBROUTINE_DEFS
+  USE STATICPARAMS
+  IMPLICIT NONE
+
+  REAL, INTENT(IN) :: segwidth
+  INTEGER, INTENT(IN) :: tval, ipos, num_mons
+  INTEGER :: state_li 
+  INTEGER :: i,j,a1id,a2id,paircnt,neigh_col,pairflag,imix,jmix
+  INTEGER :: a1type,a2type,reftype,seltype,nrefcnts
+  INTEGER,DIMENSION(1:npairs_neigh)::neigh_inst,each_li_neigh
+  INTEGER,DIMENSION(1:npairs_neigh,1:npairs_neigh)::mix_neigh_inst
+  INTEGER*8,DIMENSION(1:2**(npairs_neigh))::state_count
+  REAL :: rxval, ryval, rzval, rval
+
+  neigh_inst = 0; mix_neigh_inst = 0; state_count = 0
+  nrefcnts = 0; pairflag = -1
+  reftype = pairs_neigh_arr(1,1)
+  
+  DO i = 1,num_mons
+
+     a1id   = seg_aid(i)     
+     a1type = seg_typ(i)
+     
+     IF(a1type .NE. reftype) CYCLE
+     IF(a1type .NE. aidvals(a1id,3)) THEN
+        PRINT *, "1", i, a1type, a1id, aidvals(a1id,3)
+        STOP "ERROR: Invalid i type found in NEIGH-LAYER"
+     END IF
+
+     nrefcnts = nrefcnts + 1
+     each_li_neigh = 0
+     state_li = 0
+     
+     DO j = 1,num_mons
+
+        a2id   = seg_aid(j)
+        a2type = seg_typ(j)
+
+        IF(a2type .NE. aidvals(a2id,3)) THEN
+           PRINT *, "2",j, a2type, a2id, aidvals(a2id,3)
+           STOP "ERROR: Invalid j type found in NEIGH-LAYER"
+        END IF
+
+        IF(a1id == a2id) CYCLE
+        pairflag = -1
+        
+        DO paircnt = 1,npairs_neigh
+           IF(a2type == pairs_neigh_arr(paircnt,2)) THEN
+              pairflag = 1
+              seltype = pairs_neigh_arr(paircnt,2)
+              neigh_col = paircnt
+           END IF
+        END DO
+
+        IF(pairflag == -1) CYCLE
+        
+        rneigh_cut = rcut_neigh_arr(neigh_col)
+        rxval = trx_lmp(a1id,tval) - trx_lmp(a2id,tval) 
+        ryval = try_lmp(a1id,tval) - try_lmp(a2id,tval) 
+        rzval = trz_lmp(a1id,tval) - trz_lmp(a2id,tval) 
+        
+        rxval = rxval - box_xl*ANINT(rxval/box_xl)
+        ryval = ryval - box_yl*ANINT(ryval/box_yl)
+        rzval = rzval - box_zl*ANINT(rzval/box_zl)
+
+        rval = sqrt(rxval**2 + ryval**2 + rzval**2)
+
+        IF(rval .LT. rneigh_cut) THEN
+           each_li_neigh(neigh_col) = each_li_neigh(neigh_col)+1
+           neigh_inst(neigh_col) = neigh_inst(neigh_col) + 1
+        END IF
+
+     END DO
+
+     ! Mixed coordination
+     ! Assumes symmetric and diagonal = 1; but not assigned explicitly
+     !IBSET creates a 1 at a bit position from rightmost end
+     DO imix = 1,npairs_neigh-1
+        IF(each_li_neigh(imix) > 0) state_li = IBSET(state_li,imix-1)
+        DO jmix = imix+1,npairs_neigh
+           IF(each_li_neigh(imix) > 0 .AND. each_li_neigh(jmix) > 0)&
+                & THEN
+           
+              mix_neigh_inst(imix,jmix) = mix_neigh_inst(imix,jmix)&
+                   &+1
+
+           END IF
+        END DO
+     END DO
+
+     IF(each_li_neigh(npairs_neigh) > 0) state_li = IBSET(state_li&
+          &,npairs_neigh-1)
+
+     ! This converts back to integer
+     state_count(state_li) = state_count(state_li) + 1
+     
+  END DO
+
+  
+  DO j = 1,npairs_neigh-1
+     catneighlayeravg(j,ipos) = catneighlayeravg(j,ipos) +&
+          & REAL(neigh_inst(j))/REAL(nrefcnts)
+
+     DO i = j+1,npairs_neigh
+        catmixneighlayeravg(j,i,ipos) = catmixneighlayeravg(j,i,ipos)&
+             & + REAL(mix_neigh_inst(j,i))/REAL(nrefcnts)
+     END DO
+  END DO
+  j = npairs_neigh
+  catneighlayeravg(j,ipos) = catneighlayeravg(j,ipos) +&
+       & REAL(neigh_inst(j))/REAL(nrefcnts)
+
+  ! Add state_count to average
+  ! Note that size of state_count_avg is 2^(npairs_neigh)
+  state_count_avg(:,ipos) = state_count_avg(:,ipos) +&
+       & REAL(state_count(:))/REAL(nrefcnts)
+  
+END SUBROUTINE CAT_MIXNEIGH_DIST_LAYER
+
+!--------------------------------------------------------------------
+
+! Distinguishes different carbonate molecule ONLY
+SUBROUTINE CAT_NEIGHMOL_DIST_LAYER(tval,ipos,num_mons,segwidth)
+
+  USE STATICPARAMS
+  IMPLICIT NONE
+
+  REAL, INTENT(IN) :: segwidth
+  INTEGER, INTENT(IN) :: tval, ipos, num_mons
+  INTEGER :: i,j,a1id,a2id,paircnt,neigh_col,pairflag
+  INTEGER :: mol1id, mol2id
+  INTEGER :: a1type,a2type,reftype,seltype,nrefcnts
+  INTEGER,DIMENSION(1:npairs_neigh)::neigh_inst,neighmol_inst
+  REAL :: rxval, ryval, rzval, rval
+
+  neigh_inst = 0
+  nrefcnts = 0; pairflag = -1
+  reftype = pairs_neigh_arr(1,1)
+  
+  DO i = 1,num_mons
+
+     a1id   = seg_aid(i)     
+     a1type = seg_typ(i)
+     mol1id = aidvals(a1id,2)
+     
+     IF(a1type .NE. reftype) CYCLE
+     IF(a1type .NE. aidvals(a1id,3)) THEN
+        PRINT *, "1", i, a1type, a1id, aidvals(a1id,3)
+        STOP "ERROR: Invalid i type found in NEIGH-LAYER"
+     END IF
+
+     nrefcnts = nrefcnts + 1
+     
+     DO j = 1,num_mons
+
+        a2id   = seg_aid(j)
+        a2type = seg_typ(j)
+        mol2id = aidvals(a2id,2)
+
+        IF(a2type .NE. aidvals(a2id,3)) THEN
+           PRINT *, "2",j, a2type, a2id, aidvals(a2id,3)
+           STOP "ERROR: Invalid j type found in NEIGH-LAYER"
+        END IF
+
+        IF(a1id == a2id) CYCLE
+        pairflag = -1
+        
+        DO paircnt = 1,npairs_neigh
+           IF(a2type == pairs_neigh_arr(paircnt,2)) THEN
+              pairflag = 1
+              seltype = pairs_neigh_arr(paircnt,2)
+              neigh_col = paircnt
+           END IF
+        END DO
+
+        IF(pairflag == -1) CYCLE
+
+        !Is this molecule already 
+        
+        rneigh_cut = rcut_neigh_arr(neigh_col)
+        rxval = trx_lmp(a1id,tval) - trx_lmp(a2id,tval) 
+        ryval = try_lmp(a1id,tval) - try_lmp(a2id,tval) 
+        rzval = trz_lmp(a1id,tval) - trz_lmp(a2id,tval) 
+        
+        rxval = rxval - box_xl*ANINT(rxval/box_xl)
+        ryval = ryval - box_yl*ANINT(ryval/box_yl)
+        rzval = rzval - box_zl*ANINT(rzval/box_zl)
+
+        rval = sqrt(rxval**2 + ryval**2 + rzval**2)
+
+        IF(rval .LT. rneigh_cut) THEN
+
+           neigh_inst(neigh_col) = neigh_inst(neigh_col) + 1
+
+        END IF
+
+     END DO
+
+  END DO
+  
+  DO j = 1,npairs_neigh
+     catneighlayeravg(j,ipos) = catneighlayeravg(j,ipos) +&
+          & REAL(neigh_inst(j))/REAL(nrefcnts)
+  END DO
+
+END SUBROUTINE CAT_NEIGHMOL_DIST_LAYER
+
+!--------------------------------------------------------------------
+
+! Compute RDF
 SUBROUTINE COMPUTE_RDF()
 
   USE STATICPARAMS
@@ -2841,6 +3157,7 @@ END SUBROUTINE COMPUTE_RDF
 
 SUBROUTINE OPEN_STRUCT_OUTPUT_FILES()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
 
   IMPLICIT NONE
@@ -2896,6 +3213,7 @@ END SUBROUTINE ALLOUTPUTS
 
 SUBROUTINE OUTPUT_ALLDENS()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -2952,6 +3270,7 @@ END SUBROUTINE OUTPUT_ALLDENS
 
 SUBROUTINE OUTPUT_LAYERRDF()
 
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -3079,7 +3398,8 @@ END SUBROUTINE OUTPUT_LAYERRDF
 !--------------------------------------------------------------------
 
 SUBROUTINE OUTPUT_ALLRDF()
-
+  
+  USE SUBROUTINE_DEFS
   USE STATICPARAMS
   IMPLICIT NONE
 
@@ -3169,6 +3489,120 @@ END SUBROUTINE OUTPUT_ALLRDF
 
 !--------------------------------------------------------------------
 
+SUBROUTINE OUTPUT_NEIGH_LAYERS()
+
+  USE STATICPARAMS
+  IMPLICIT NONE
+
+  INTEGER :: p,i,paircnt,j
+  REAL :: zin, zout, zin_wrt_interf, zout_wrt_interf
+  REAL :: neighfrnorm
+  CHARACTER(LEN=3) :: intnum
+  
+  IF(rdf2dfreq == 1) THEN
+     neighfrnorm = nframes
+  ELSE
+     neighfrnorm = INT(nframes/neighlfreq)+1
+  END IF
+
+  ! All neighbors based on neigh_pair_arr
+  DO p = 1,2*nmax_layers
+     
+     WRITE(intnum,'(I0)') p
+     dum_fname  = "neigh_surfbased_"//trim(intnum)//"_"&
+          &//trim(adjustl(traj_fname))//".txt"
+     OPEN(unit = dumwrite,file = trim(dum_fname), status="replace"&
+          &, action = "write")
+     WRITE(dumwrite,'(2X,A6,2X)',advance="no") "neighs"
+     
+     DO i = 1,npairs_neigh
+        WRITE(dumwrite,'(I0,A1,I0,2X)',advance="no")&
+             & pairs_neigh_arr(i,1),"-",pairs_neigh_arr(i,2)
+     END DO
+     
+     WRITE(dumwrite,*)
+     
+     DO i = 1,maxneighsize
+        WRITE(dumwrite,'(I0,2X)',advance="no") i-1
+        DO paircnt = 1,npairs_neigh
+           WRITE(dumwrite,'(F16.9,2X)',advance="no") neighlayeravg(i&
+                &,paircnt,p)/REAL(neighfrnorm)
+        END DO
+        WRITE(dumwrite,*)
+     END DO
+     CLOSE(dumwrite)
+  END DO
+
+  ! With respect to cation, neighs attached to ONLY ONE neighbor type
+  dum_fname  = "catneighavg_surfbased_"//trim(adjustl(traj_fname))//".&
+       &txt"
+  OPEN(unit = dumwrite,file = trim(dum_fname), status="replace"&
+       &, action = "write")
+  WRITE(dumwrite,'(2X,A6,2X)',advance="no") "Layer#"
+  
+  DO i = 1,npairs_neigh
+     WRITE(dumwrite,'(I0,A1,I0,2X)',advance="no")&
+          & pairs_neigh_arr(1,1),"-",pairs_neigh_arr(i,2)
+  END DO
+
+  WRITE(dumwrite,*)
+             
+  DO p = 1,2*nmax_layers
+     WRITE(dumwrite,'(I0,2X)',advance="no") p
+     DO i = 1,npairs_neigh
+        WRITE(dumwrite,'(F16.9,2X)',advance="no") catneighlayeravg(i&
+             &,p)/REAL(neighfrnorm)
+     END DO
+     WRITE(dumwrite,*)
+  END DO
+
+  ! With respect to cation, neighs attached to MULTIPLE neigh types
+  dum_fname  = "catmixavg_surfbased_"//trim(adjustl(traj_fname))//".&
+       &txt"
+  OPEN(unit = dumwrite,file = trim(dum_fname), status="replace"&
+       &, action = "write")
+  WRITE(dumwrite,'(2X,A6,2X)',advance="no") "Layer#"
+  
+  DO i = 1,npairs_neigh
+     DO j = i+1,npairs_neigh-1
+        WRITE(dumwrite,'(I0,A1,I0,A1,I0,2X)',advance="no")&
+             & pairs_neigh_arr(i,2),"-",pairs_neigh_arr(1,1),"-"&
+             &,pairs_neigh_arr(j,2)
+     END DO
+  END DO
+
+  WRITE(dumwrite,*)
+             
+  DO p = 1,2*nmax_layers
+     WRITE(dumwrite,'(I0,2X)',advance="no") p
+     DO i = 1,npairs_neigh-1
+        DO j = i+1,npairs_neigh
+           WRITE(dumwrite,'(F16.9,2X)',advance="no")&
+                & catmixneighlayeravg(i,j,p)/REAL(neighfrnorm)
+        END DO
+     END DO
+     WRITE(dumwrite,*)
+  END DO
+
+  ! With respect to cation, all possible ion-coordinations with neighs
+  dum_fname  = "catsolvstruct_surfbased_"//trim(adjustl(traj_fname))&
+       &//".txt"
+  OPEN(unit = dumwrite,file = trim(dum_fname), status="replace"&
+       &, action = "write")
+  DO i = 1,2**(npairs_neigh)
+     WRITE(dumwrite,'(I0,2X)',advance="no") i
+     DO p = 1,2*nmax_layers
+        WRITE(dumwrite,'(F16.9,2X)',advance="no") state_count_avg(i&
+             &,p)/REAL(neighfrnorm)
+     END DO
+     WRITE(dumwrite,*)
+  END DO
+
+  
+END SUBROUTINE OUTPUT_NEIGH_LAYERS
+
+!--------------------------------------------------------------------
+
 SUBROUTINE ALLOCATE_TOPO_ARRAYS()
 
   USE STATICPARAMS
@@ -3232,7 +3666,7 @@ SUBROUTINE ALLOCATE_ANALYSIS_ARRAYS()
   USE STATICPARAMS
   IMPLICIT NONE
 
-  INTEGER :: AllocateStatus
+  INTEGER :: AllocateStatus, nlayer_allo
 
 ! Allocate for statics
 
@@ -3283,21 +3717,44 @@ SUBROUTINE ALLOCATE_ANALYSIS_ARRAYS()
      DEALLOCATE(trz_lmp)
   END IF
      
+  IF(layer_grpflag_interf) nlayer_allo = nmax_layers
+  IF(layer_grpflag_surf) nlayer_allo = 2*nmax_layers
+  
   IF(rdf2dflag) THEN
-     IF(layer_grpflag_interf) THEN
-        ALLOCATE(rdf2darray(0:rdf2dmaxbin-1,npairs_2drdf,nmax_layers)&
+     ALLOCATE(rdf2darray(0:rdf2dmaxbin-1,npairs_2drdf,nlayer_allo)&
              &,stat=AllocateStatus)
         IF(AllocateStatus/=0) STOP "did not allocate rdf2darray"
-     ELSEIF(layer_grpflag_surf) THEN
-        ALLOCATE(rdf2darray(0:rdf2dmaxbin-1,npairs_2drdf,2&
-             &*nmax_layers),stat=AllocateStatus)
-        IF(AllocateStatus/=0) STOP "did not allocate rdf2darray"
-     END IF
-  ELSE
+   ELSE
      ALLOCATE(rdf2darray(1,1,1))
      DEALLOCATE(rdf2darray)
   END IF
-  
+
+  IF(neighlayerflag) THEN
+     ALLOCATE(neighlayeravg(maxneighsize,npairs_neigh,nlayer_allo)&
+          &,stat=AllocateStatus)
+     IF(AllocateStatus/=0) STOP "did not allocate neighlayeravg"
+     ALLOCATE(catneighlayeravg(npairs_neigh,nlayer_allo)&
+          &,stat=AllocateStatus)
+     IF(AllocateStatus/=0) STOP "did not allocate catneighlayeravg"
+     ALLOCATE(catmixneighlayeravg(npairs_neigh,npairs_neigh&
+          &,nlayer_allo),stat=AllocateStatus)
+     IF(AllocateStatus/=0) STOP "did not allocate catmixneighlayeravg"
+     ALLOCATE(state_count_avg(2**(npairs_neigh),nlayer_allo)&
+          &,stat=AllocateStatus)
+     IF(AllocateStatus/=0) STOP "did not allocate state_count_avg"
+
+  ELSE
+     ALLOCATE(catneighlayeravg(1,1))
+     DEALLOCATE(catneighlayeravg)
+     ALLOCATE(catmixneighlayeravg(1,1,1))
+     DEALLOCATE(catmixneighlayeravg)
+     ALLOCATE(state_count_avg(1,1))
+     DEALLOCATE(state_count_avg)
+     ALLOCATE(neighlayeravg(1,1,1))
+     DEALLOCATE(neighlayeravg)
+  END IF
+
+
 ! Allocate for dynamics 
 
   IF(ion_dynflag .OR. cion_dynflag .OR. pion_dynflag) THEN
@@ -3378,5 +3835,91 @@ SUBROUTINE DEALLOCATE_ARRAYS()
   CLOSE(logout)
   
 END SUBROUTINE DEALLOCATE_ARRAYS
+
+!--------------------------------------------------------------------
+
+!------ALL OBSOLETE SUBROUTINES--------------------------------------
+
+! Distinguishes all oxygens - Obsolete
+! This is a part of CAT_MIXNEIGH_DIST_LAYER
+SUBROUTINE CAT_NEIGH_DIST_LAYER(tval,ipos,num_mons,segwidth)
+
+  USE STATICPARAMS
+  IMPLICIT NONE
+
+  REAL, INTENT(IN) :: segwidth
+  INTEGER, INTENT(IN) :: tval, ipos, num_mons
+  INTEGER :: i,j,a1id,a2id,paircnt,neigh_col,pairflag
+  INTEGER :: a1type,a2type,reftype,seltype,nrefcnts
+  INTEGER,DIMENSION(1:npairs_neigh)::neigh_inst
+  REAL :: rxval, ryval, rzval, rval
+
+  neigh_inst = 0
+  nrefcnts = 0; pairflag = -1
+  reftype = pairs_neigh_arr(1,1)
+  
+  DO i = 1,num_mons
+
+     a1id   = seg_aid(i)     
+     a1type = seg_typ(i)
+     
+     IF(a1type .NE. reftype) CYCLE
+     IF(a1type .NE. aidvals(a1id,3)) THEN
+        PRINT *, "1", i, a1type, a1id, aidvals(a1id,3)
+        STOP "ERROR: Invalid i type found in NEIGH-LAYER"
+     END IF
+
+     nrefcnts = nrefcnts + 1
+     
+     DO j = 1,num_mons
+
+        a2id   = seg_aid(j)
+        a2type = seg_typ(j)
+
+        IF(a2type .NE. aidvals(a2id,3)) THEN
+           PRINT *, "2",j, a2type, a2id, aidvals(a2id,3)
+           STOP "ERROR: Invalid j type found in NEIGH-LAYER"
+        END IF
+
+        IF(a1id == a2id) CYCLE
+        pairflag = -1
+        
+        DO paircnt = 1,npairs_neigh
+           IF(a2type == pairs_neigh_arr(paircnt,2)) THEN
+              pairflag = 1
+              seltype = pairs_neigh_arr(paircnt,2)
+              neigh_col = paircnt
+           END IF
+        END DO
+
+        IF(pairflag == -1) CYCLE
+        
+        rneigh_cut = rcut_neigh_arr(neigh_col)
+        rxval = trx_lmp(a1id,tval) - trx_lmp(a2id,tval) 
+        ryval = try_lmp(a1id,tval) - try_lmp(a2id,tval) 
+        rzval = trz_lmp(a1id,tval) - trz_lmp(a2id,tval) 
+        
+        rxval = rxval - box_xl*ANINT(rxval/box_xl)
+        ryval = ryval - box_yl*ANINT(ryval/box_yl)
+        rzval = rzval - box_zl*ANINT(rzval/box_zl)
+
+        rval = sqrt(rxval**2 + ryval**2 + rzval**2)
+
+        IF(rval .LT. rneigh_cut) THEN
+
+           neigh_inst(neigh_col) = neigh_inst(neigh_col) + 1
+
+        END IF
+
+     END DO
+
+  END DO
+  
+  DO j = 1,npairs_neigh
+     catneighlayeravg(j,ipos) = catneighlayeravg(j,ipos) +&
+          & REAL(neigh_inst(j))/REAL(nrefcnts)
+  END DO
+
+END SUBROUTINE CAT_NEIGH_DIST_LAYER
 
 !--------------------------------------------------------------------

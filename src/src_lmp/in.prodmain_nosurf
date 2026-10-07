@@ -1,23 +1,29 @@
 #####################################################
-# Stage 2: Short equilibration with Langevin NVT    #
+# Stage 6: Main Production NVT Run Using Nose-Hoover#
 # Version: Sept-03-2026                             #
-# Fix-wall/lj is used here and p p f                #
+# Uses fix wall/lj and p p f            	    #
 #####################################################
+
+# Keep same vacuum distance
+variable z_vacuum equal 60.0
 
 # Initialization
 units		real
-boundary	p p f
 atom_style	full
-read_restart	restart.init
+read_restart	restart1
+#variable zlo_relaxed equal $(zlo)
+#variable zhi_relaxed equal $(zhi)
+#variable zhi_crop equal ${zhi_relaxed} - ${z_vacuum}
+#change_box      all z final ${zlo_relaxed} ${zhi_crop} boundary p p f # Switch back to p p f here
 
 # Neighbor information
-neighbor        3.0 bin
-neigh_modify	every 10 one 10000
+neighbor        5.0 bin
+neigh_modify	every 1 delay 0 one 20000 page 200000
 
 # Pair Information
 pair_style      lj/cut/coul/long 8.0 15.0
 include         pair_coeff.dat
-pair_modify     mix geometric shift yes
+pair_modify     shift yes mix geometric
 
 # Topology Information
 bond_style      harmonic
@@ -45,43 +51,39 @@ group coi_ions type 6:8
 group li_ions type 5
 
 #####################################################
-# Equilibration (Langevin dynamics at 300K)
+# Equilibration (Nose-Hoover dynamics at 300K)
 #####################################################
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-velocity        all set 0.0 0.0 0.0
-velocity        all create 300.0 1231 mom yes
-write_data      init_config.data pair ij
-thermo_style	custom step temp pe
-thermo          10000
-dump            main all custom 10000 config_lang.lammpstrj id type xu yu zu
+thermo_style	custom step temp etotal
+thermo          100000
+dump            main all custom 5000 config_prod.lammpstrj id type xu yu zu
 dump_modify     main append yes
 
-# Main Fixes
-fix  thermostat all langevin 300.0 300.0 1000.0 904297
-fix  fast polymer shake 0.0001 30 1000000 b 2 10 14
-fix  integrate all nve
+# Main Fixes - Switch back to NVT
+fix  fast polymer shake 0.0001 30 5000000 b 2 10 14
+fix  integrate all nvt temp 300.0 300.0 100.0
 fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
 fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
 
 # Run and Restart Styles
 run_style verlet
 restart   500000 restart1 restart2
-restart   500000 archival_restarts/archival_*.restart
-timestep  0.5
-run	  1000000
+restart   10000000 archival_restarts/archival_*.restart
 
-timestep  1
-run  2000000
+#timestep  1.0
+#run  20000000 upto  
+
+timestep  1.5
+run  50000000 upto
 
 # Unfix
-unfix thermostat
 unfix fast
 unfix integrate
 unfix wallhi
 unfix walllow
 
 # Write Outputs
-write_data      langevin.data pair ij
-write_restart 	restart.lang
+write_data      nvtmain.data pair ij
+write_restart 	restart.nvtmain

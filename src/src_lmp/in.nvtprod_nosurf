@@ -1,18 +1,24 @@
 #####################################################
-# Stage 3: Main Run Using Nose-Hoover               #
-# Version: Mar-16-2026                              #
+# Stage 5: Production NVT Run Using Nose-Hoover     #
+# Version: Sept-03-2026                             #
+# Uses fix wall/lj and p p f            	    #
 #####################################################
 
+# Keep same vacuum distance
+variable z_vacuum equal 60.0
 
 # Initialization
 units		real
-boundary	p p f
 atom_style	full
-read_restart	restart1
+read_restart	restart.nptequil
+variable zlo_relaxed equal $(zlo)
+variable zhi_relaxed equal $(zhi)
+variable zhi_crop equal ${zhi_relaxed} - ${z_vacuum}
+change_box      all z final ${zlo_relaxed} ${zhi_crop} boundary p p f # Switch back to p p f here
 
 # Neighbor information
-neighbor        5.0 bin
-neigh_modify	every 10 one 10000
+neighbor        3.0 bin
+neigh_modify	every 2 page one 20000 page 200000
 
 # Pair Information
 pair_style      lj/cut/coul/long 8.0 15.0
@@ -50,35 +56,34 @@ group li_ions type 5
 
 # Initiate/Write Atoms and Other Details
 variable        ts equal step
-thermo_style	custom step temp pe
-thermo          10000
-dump            main all custom 10000 config_${ts}.lammpstrj id type xu yu zu
+thermo_style	custom step temp etotal
+thermo          100000
+dump            main all custom 5000 config_prod.lammpstrj id type xu yu zu
+dump_modify     main append yes
 
-# Main Fixes
+# Main Fixes - Switch back to NVT
+fix  fast polymer shake 0.0001 30 5000000 b 2 10 14
+fix  integrate all nvt temp 300.0 300.0 100.0
 fix  wallhi   all wall/lj126 zhi  EDGE 0.5 0.5 0.56123
 fix  walllow  all wall/lj126 zlo  EDGE 0.5 0.5 0.56123
-fix  fast polymer shake 0.0001 b 2 10 14
-fix  integrate all nvt temp 300.0 300.0 100.0
 
 # Run and Restart Styles
 run_style verlet
-restart   5000 restart1 restart2
-restart   500000 archival_*.restart
-timestep  0.5
-run	  10000000
+restart   500000 restart1 restart2
+restart   10000000 archival_restarts/archival_*.restart
 
 timestep  1.0
-run  5000000
+run  20000000 upto  
 
 timestep  2.0
-run  25000000
+run  50000000 upto
 
 # Unfix
-unfix wallhi
-unfix walllow
 unfix fast
 unfix integrate
+unfix wallhi
+unfix walllow
 
 # Write Outputs
-write_data      nvt.dat pair ij
-write_restart 	restart.nvt
+write_data      nvtmain.data pair ij
+write_restart 	restart.nvtmain

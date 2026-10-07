@@ -1,5 +1,5 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 2: Dev_Apr-27-2026---------------------------
+!---------------Version 4: Sept-27-2026------------------------------
 !---------------Main File: analyze_statics.f90-----------------------
 !********************************************************************
 
@@ -207,7 +207,7 @@ MODULE SUBROUTINE_DEFS
      END SUBROUTINE LAYERWISE_ANALYSIS
   END INTERFACE
 
-  ! 2D RDF analysis
+  ! Layer-wise RDF analysis
   INTERFACE
      SUBROUTINE RDF2D_LAYER(tval,ipos,num_mons,segwidth)
        IMPLICIT NONE
@@ -216,6 +216,25 @@ MODULE SUBROUTINE_DEFS
      END SUBROUTINE RDF2D_LAYER
   END INTERFACE
 
+  ! Layer-wise neighbor analysis
+  INTERFACE
+     SUBROUTINE NEIGHS_LAYER(tval,ipos,num_mons,segwidth)
+       IMPLICIT NONE
+       REAL, INTENT(IN) :: segwidth
+       INTEGER, INTENT(IN) :: tval, ipos, num_mons
+     END SUBROUTINE NEIGHS_LAYER
+  END INTERFACE
+
+  ! Layer-wise mixed coordination neighbor analysis
+  INTERFACE
+     SUBROUTINE CAT_MIXNEIGH_DIST_LAYER(tval,ipos,num_mons,segwidth)
+       IMPLICIT NONE
+       REAL, INTENT(IN) :: segwidth
+       INTEGER, INTENT(IN) :: tval, ipos, num_mons
+     END SUBROUTINE CAT_MIXNEIGH_DIST_LAYER
+  END INTERFACE
+
+  
   ! Global RDF analysis - bulk
   INTERFACE
      SUBROUTINE COMPUTE_RDF()
