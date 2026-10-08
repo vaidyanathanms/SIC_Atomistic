@@ -1,5 +1,5 @@
 !---------------To analyze properties of bulk-sei systems------------
-!---------------Version 4: Sept-24-2026------------------------------
+!---------------Version 3: Dev_Sept-24-2026--------------------------
 !---------------Parameter File: params_statics.f90-------------------
 !********************************************************************
 
@@ -3563,8 +3563,8 @@ SUBROUTINE OUTPUT_NEIGH_LAYERS()
        &, action = "write")
   WRITE(dumwrite,'(2X,A6,2X)',advance="no") "Layer#"
   
-  DO i = 1,npairs_neigh
-     DO j = i+1,npairs_neigh-1
+  DO i = 1,npairs_neigh-1
+     DO j = i+1,npairs_neigh
         WRITE(dumwrite,'(I0,A1,I0,A1,I0,2X)',advance="no")&
              & pairs_neigh_arr(i,2),"-",pairs_neigh_arr(1,1),"-"&
              &,pairs_neigh_arr(j,2)
